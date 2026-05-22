@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Reportes</title>
+    <style>
+        :root {
+            --ink: #202833;
+            --muted: #65717e;
+            --paper: #ffffff;
+            --page: #eef1f4;
+            --soft: #f7f8fa;
+            --line: #d8dde3;
+            --navy: #243142;
+            --accent: #c45b18;
+            --success: #2f6f4e;
+            --danger: #b33a32;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            padding: 28px;
+            background: var(--page);
+            color: var(--ink);
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+        }
+
+        .shell {
+            width: min(1040px, 100%);
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .header h1 {
+            color: var(--navy);
+            font-size: 28px;
+            line-height: 1.15;
+        }
+
+        .header p {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .panel {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 22px;
+        }
+
+        .panel-title {
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .panel-title h2 {
+            color: var(--navy);
+            font-size: 18px;
+            line-height: 1.2;
+        }
+
+        .panel-title span {
+            display: block;
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            color: var(--ink);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        select,
+        input[type="date"] {
+            width: 100%;
+            min-height: 42px;
+            padding: 9px 11px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            background: #fff;
+            color: var(--ink);
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        select:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: var(--navy);
+            box-shadow: 0 0 0 3px rgba(36, 49, 66, 0.12);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .button-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            min-height: 42px;
+            padding: 9px 16px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--navy);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #1a2534;
+        }
+
+        .btn-secondary {
+            background: var(--soft);
+            border-color: var(--line);
+            color: var(--ink);
+        }
+
+        .btn-secondary:hover {
+            background: #eceff2;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.58;
+        }
+
+        .status {
+            display: none;
+            margin-top: 14px;
+            padding: 11px 12px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            background: var(--soft);
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .status.loading,
+        .status.success,
+        .status.error {
+            display: block;
+        }
+
+        .status.loading {
+            border-left: 3px solid var(--navy);
+        }
+
+        .status.success {
+            border-left: 3px solid var(--success);
+            color: var(--success);
+        }
+
+        .status.error {
+            border-left: 3px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .selected-note {
+            display: none;
+            margin-top: 8px;
+            padding: 9px 10px;
+            border-radius: 4px;
+            background: var(--soft);
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .selected-note.show {
+            display: block;
+        }
+
+        .store-list {
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .store-row {
+            display: grid;
+            grid-template-columns: 1fr 200px;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 10px;
+            border-top: 1px solid var(--line);
+        }
+
+        .store-row:first-child {
+            border-top: 0;
+        }
+
+        .store-name {
+            font-weight: 800;
+            color: var(--ink);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .store-name.up { color: var(--success); }
+        .store-name.down { color: var(--danger); }
+        .store-name.alert { color: var(--accent); }
+        .store-name.same { color: var(--ink); }
+
+        .store-row select {
+            min-height: 38px;
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+
+        .footer {
+            margin-top: 16px;
+            color: var(--muted);
+            font-size: 11px;
+            text-align: right;
+        }
+
+        @media (max-width: 820px) {
+            body {
+                padding: 18px;
+            }
+
+            .header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .form-row,
+            .button-row {
+                grid-template-columns: 1fr;
+            }
+
+            .button-row {
+                align-items: stretch;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <header class="header">
+            <div>
+                <h1>Panel de Reportes</h1>
+                <p>Little Caesars - compañía 20</p>
+            </div>
+        </header>
+
+        <div class="workspace">
+            <section class="panel">
+                <div class="panel-title">
+                    <h2>Reporte por Distrito</h2>
+                    <span>Detalle ejecutivo de tiendas</span>
+                </div>
+
+                <form id="districtForm">
+                    <div class="form-group">
+                        <label for="district_id">Distrito</label>
+                        <select id="district_id" name="district_id" required disabled>
+                            <option value="">Cargando distritos...</option>
+                        </select>
+                        <div id="districtInfo" class="selected-note"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="store_id">Tiendas del distrito</label>
+                        <div id="storeList" class="store-list"></div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="district_d1">Fecha Inicio</label>
+                            <input type="date" id="district_d1" name="district_d1" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="district_d2">Fecha Fin</label>
+                            <input type="date" id="district_d2" name="district_d2" required>
+                        </div>
+                    </div>
+
+                    <div class="button-row">
+                        <button type="reset" class="btn-secondary">Limpiar</button>
+                        <button type="button" class="btn-secondary" id="districtPdfBtn">Descargar PDF</button>
+                        <button type="submit" class="btn-primary" id="districtGenerateBtn">Generar</button>
+                    </div>
+                </form>
+
+                <div class="status" id="districtStatus"></div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-title">
+                    <h2>Resultados Regionales</h2>
+                    <span>Promedios y rankings por región</span>
+                </div>
+
+                <form id="regionalForm">
+                    <div class="form-group">
+                        <label for="region">Región</label>
+                        <select id="region" name="region" required>
+                            <option value="nl">Nuevo León</option>
+                            <option value="coahuila">Coahuila</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="regional_d1">Fecha Inicio</label>
+                            <input type="date" id="regional_d1" name="regional_d1" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="regional_d2">Fecha Fin</label>
+                            <input type="date" id="regional_d2" name="regional_d2" required>
+                        </div>
+                    </div>
+
+                    <div class="button-row">
+                        <button type="reset" class="btn-secondary">Limpiar</button>
+                        <button type="button" class="btn-secondary" id="regionalPdfBtn">Descargar PDF</button>
+                        <button type="submit" class="btn-primary" id="regionalGenerateBtn">Generar</button>
+                    </div>
+                </form>
+
+                <div class="status" id="regionalStatus"></div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-title">
+                    <h2>Reporte por Zona</h2>
+                    <span>Detalle ejecutivo de locaciones CORALSA</span>
+                </div>
+
+                <form id="zoneForm">
+                    <div class="form-group">
+                        <label for="zone_id">Zona</label>
+                        <select id="zone_id" name="zone_id" required disabled>
+                            <option value="">Cargando zonas...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="zoneStoreList">Locaciones de la zona</label>
+                        <div id="zoneStoreList" class="store-list"></div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="zone_d1">Fecha Inicio</label>
+                            <input type="date" id="zone_d1" name="zone_d1" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="zone_d2">Fecha Fin</label>
+                            <input type="date" id="zone_d2" name="zone_d2" required>
+                        </div>
+                    </div>
+
+                    <div class="button-row">
+                        <button type="reset" class="btn-secondary">Limpiar</button>
+                        <button type="button" class="btn-secondary" id="zonePdfBtn">Descargar PDF</button>
+                        <button type="submit" class="btn-primary" id="zoneGenerateBtn">Generar</button>
+                    </div>
+                </form>
+
+                <div class="status" id="zoneStatus"></div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-title">
+                    <h2>Resultados Zonales</h2>
+                    <span>Promedios y tiempos por Zona 1, Zona 2 y Zona 3</span>
+                </div>
+
+                <form id="zonalResultsForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="zonal_d1">Fecha Inicio</label>
+                            <input type="date" id="zonal_d1" name="zonal_d1" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="zonal_d2">Fecha Fin</label>
+                            <input type="date" id="zonal_d2" name="zonal_d2" required>
+                        </div>
+                    </div>
+
+                    <div class="button-row">
+                        <button type="reset" class="btn-secondary">Limpiar</button>
+                        <button type="button" class="btn-secondary" id="zonalPdfBtn">Descargar PDF</button>
+                        <button type="submit" class="btn-primary" id="zonalGenerateBtn">Generar</button>
+                    </div>
+                </form>
+
+                <div class="status" id="zonalStatus"></div>
+            </section>
+        </div>
+
+        <div class="footer">Servidor local: http://localhost:3000</div>
+    </main>
+
+    <script>
+        const districtForm = document.getElementById('districtForm');
+        const regionalForm = document.getElementById('regionalForm');
+        const zoneForm = document.getElementById('zoneForm');
+        const zonalResultsForm = document.getElementById('zonalResultsForm');
+        const districtSelect = document.getElementById('district_id');
+        const zoneSelect = document.getElementById('zone_id');
+        const districtInfo = document.getElementById('districtInfo');
+        const storeList = document.getElementById('storeList');
+        const zoneStoreList = document.getElementById('zoneStoreList');
+        const districtStatus = document.getElementById('districtStatus');
+        const regionalStatus = document.getElementById('regionalStatus');
+        const zoneStatus = document.getElementById('zoneStatus');
+        const zonalStatus = document.getElementById('zonalStatus');
+        const districtGenerateBtn = document.getElementById('districtGenerateBtn');
+        const districtPdfBtn = document.getElementById('districtPdfBtn');
+        const regionalPdfBtn = document.getElementById('regionalPdfBtn');
+        const regionalGenerateBtn = document.getElementById('regionalGenerateBtn');
+        const zonePdfBtn = document.getElementById('zonePdfBtn');
+        const zoneGenerateBtn = document.getElementById('zoneGenerateBtn');
+        const zonalPdfBtn = document.getElementById('zonalPdfBtn');
+        const zonalGenerateBtn = document.getElementById('zonalGenerateBtn');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            setDefaultDates('district_d1', 'district_d2');
+            setDefaultDates('regional_d1', 'regional_d2');
+            setDefaultDates('zone_d1', 'zone_d2');
+            setDefaultDates('zonal_d1', 'zonal_d2');
+            await loadDistricts();
+            await loadZones();
+        });
+
+        function setDefaultDates(startId, endId) {
+            const today = new Date();
+            const startDate = new Date(today);
+            startDate.setDate(today.getDate() - 6);
+
+            document.getElementById(startId).valueAsDate = startDate;
+            document.getElementById(endId).valueAsDate = today;
+        }
+
+        async function loadDistricts() {
+            districtSelect.disabled = true;
+            districtSelect.innerHTML = '<option value="">Cargando distritos...</option>';
+
+            try {
+                const response = await fetch('/api/districts');
+                if (!response.ok) throw new Error('Error cargando distritos');
+
+                const data = await response.json();
+                const districts = data.districts || [];
+
+                if (districts.length === 0) {
+                    districtSelect.innerHTML = '<option value="">No hay distritos disponibles</option>';
+                    return;
+                }
+
+                districtSelect.innerHTML = '<option value="">Selecciona un distrito...</option>';
+                districts.forEach((district) => {
+                    const option = document.createElement('option');
+                    option.value = district.id;
+                    option.textContent = `${district.name} (${district.total_locations} tiendas)`;
+                    districtSelect.appendChild(option);
+                });
+                districtSelect.disabled = false;
+            } catch (error) {
+                showStatus(districtStatus, 'error', `Error: ${error.message}`);
+                districtSelect.innerHTML = '<option value="">Error cargando distritos</option>';
+            }
+        }
+
+        async function loadZones() {
+            zoneSelect.disabled = true;
+            zoneSelect.innerHTML = '<option value="">Cargando zonas...</option>';
+
+            try {
+                const response = await fetch('/api/zones');
+                if (!response.ok) throw new Error('Error cargando zonas');
+
+                const data = await response.json();
+                const zones = data.zones || [];
+
+                if (zones.length === 0) {
+                    zoneSelect.innerHTML = '<option value="">No hay zonas disponibles</option>';
+                    return;
+                }
+
+                zoneSelect.innerHTML = '<option value="">Selecciona una zona...</option>';
+                zones.forEach((zone) => {
+                    const option = document.createElement('option');
+                    option.value = zone.id;
+                    option.textContent = `${zone.name} (${zone.total_locations} locaciones)`;
+                    zoneSelect.appendChild(option);
+                });
+                zoneSelect.disabled = false;
+            } catch (error) {
+                showStatus(zoneStatus, 'error', `Error: ${error.message}`);
+                zoneSelect.innerHTML = '<option value="">Error cargando zonas</option>';
+            }
+        }
+
+        districtSelect.addEventListener('change', (event) => {
+            if (event.target.value) {
+                const selectedOption = event.target.options[event.target.selectedIndex];
+                districtInfo.textContent = `Distrito seleccionado: ${selectedOption.textContent}`;
+                districtInfo.classList.add('show');
+                void loadStoresForDistrict();
+            } else {
+                districtInfo.classList.remove('show');
+                resetStores();
+            }
+        });
+
+        document.getElementById('district_d1').addEventListener('change', () => void loadStoresForDistrict());
+        document.getElementById('district_d2').addEventListener('change', () => void loadStoresForDistrict());
+        zoneSelect.addEventListener('change', () => void loadStoresForZone());
+        document.getElementById('zone_d1').addEventListener('change', () => void loadStoresForZone());
+        document.getElementById('zone_d2').addEventListener('change', () => void loadStoresForZone());
+
+        function resetStores() {
+            storeList.innerHTML = '<div class="selected-note show">Selecciona un distrito y fechas para ver tiendas...</div>';
+        }
+
+        function resetZoneStores() {
+            zoneStoreList.innerHTML = '<div class="selected-note show">Selecciona una zona y fechas para ver locaciones...</div>';
+        }
+
+        async function loadStoresForDistrict() {
+            const districtName = districtSelect.value;
+            const d1 = document.getElementById('district_d1').value;
+            const d2 = document.getElementById('district_d2').value;
+
+            if (!districtName || !d1 || !d2) {
+                resetStores();
+                return;
+            }
+
+            storeList.innerHTML = '<div class="selected-note show">Cargando tiendas...</div>';
+
+            try {
+                const query = new URLSearchParams({ district_name: districtName, d1, d2 });
+                const response = await fetch(`/api/report/stores?${query.toString()}`);
+                if (!response.ok) throw new Error('Error cargando tiendas');
+
+                const data = await response.json();
+                const stores = data.stores || [];
+
+                if (stores.length === 0) {
+                    storeList.innerHTML = '<div class="selected-note show">No hay tiendas para este distrito.</div>';
+                    return;
+                }
+
+                renderStoreRows(stores);
+            } catch (error) {
+                storeList.innerHTML = '<div class="selected-note show">Error cargando tiendas.</div>';
+            }
+        }
+
+        async function loadStoresForZone() {
+            const zoneName = zoneSelect.value;
+            const d1 = document.getElementById('zone_d1').value;
+            const d2 = document.getElementById('zone_d2').value;
+
+            if (!zoneName || !d1 || !d2) {
+                resetZoneStores();
+                return;
+            }
+
+            zoneStoreList.innerHTML = '<div class="selected-note show">Cargando locaciones...</div>';
+
+            try {
+                const query = new URLSearchParams({ zone_name: zoneName, d1, d2 });
+                const response = await fetch(`/api/zone-report/stores?${query.toString()}`);
+                if (!response.ok) throw new Error('Error cargando locaciones');
+
+                const data = await response.json();
+                const stores = data.stores || [];
+
+                if (stores.length === 0) {
+                    zoneStoreList.innerHTML = '<div class="selected-note show">No hay locaciones para esta zona.</div>';
+                    return;
+                }
+
+                renderStoreRows(stores, zoneStoreList);
+            } catch (error) {
+                zoneStoreList.innerHTML = '<div class="selected-note show">Error cargando locaciones.</div>';
+            }
+        }
+
+        function renderStoreRows(stores, targetList = storeList) {
+            targetList.innerHTML = '';
+
+            stores.forEach((store) => {
+                const row = document.createElement('div');
+                row.className = 'store-row';
+                row.setAttribute('data-location-id', store.location_id || '');
+
+                const name = document.createElement('div');
+                name.className = 'store-name';
+                name.textContent = store.location || 'Tienda';
+                name.setAttribute('data-base-name', name.textContent);
+
+                const select = document.createElement('select');
+                const current = normalizeChange(store.change);
+
+                [
+                    { value: 'up', label: 'Sube' },
+                    { value: 'down', label: 'Baja' },
+                    { value: 'alert', label: 'Alerta' },
+                    { value: 'same', label: 'Mantiene' },
+                ].forEach((opt) => {
+                    const option = document.createElement('option');
+                    option.value = opt.value;
+                    option.textContent = opt.label;
+                    select.appendChild(option);
+                });
+
+                select.value = current;
+                applyNameColor(name, current);
+                name.textContent = `${name.getAttribute('data-base-name')}${formatChangeSuffix(current)}`;
+
+                select.addEventListener('change', () => {
+                    const value = normalizeChange(select.value);
+                    applyNameColor(name, value);
+                    name.textContent = `${name.getAttribute('data-base-name')}${formatChangeSuffix(value)}`;
+                });
+
+                row.appendChild(name);
+                row.appendChild(select);
+                targetList.appendChild(row);
+            });
+        }
+
+        function normalizeChange(value) {
+            const text = String(value || '').toLowerCase().trim();
+            if (text === 'up' || text === 'down' || text === 'alert' || text === 'same') return text;
+            return 'same';
+        }
+
+        function applyNameColor(element, change) {
+            element.classList.remove('up', 'down', 'alert', 'same');
+            element.classList.add(change);
+        }
+
+        function formatChangeSuffix(change) {
+            if (change === 'up') return ' (Sube nivel)';
+            if (change === 'down') return ' (Baja nivel)';
+            if (change === 'alert') return ' (Alerta de descenso)';
+            return '';
+        }
+
+        function buildStoreChangesPayload() {
+            return buildStoreChangesPayloadFrom(storeList);
+        }
+
+        function buildZoneStoreChangesPayload() {
+            return buildStoreChangesPayloadFrom(zoneStoreList);
+        }
+
+        function buildStoreChangesPayloadFrom(targetList) {
+            const payload = {};
+            const rows = targetList.querySelectorAll('.store-row');
+            rows.forEach((row) => {
+                const storeId = row.getAttribute('data-location-id');
+                const select = row.querySelector('select');
+                if (!storeId || !select) return;
+                payload[storeId] = normalizeChange(select.value);
+            });
+            return payload;
+        }
+
+        districtForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const districtName = districtSelect.value;
+            const d1 = document.getElementById('district_d1').value;
+            const d2 = document.getElementById('district_d2').value;
+
+            if (!districtName || !validateDates(d1, d2, districtStatus)) return;
+
+            districtGenerateBtn.disabled = true;
+            showStatus(districtStatus, 'loading', 'Generando reporte distrital...');
+
+            try {
+                await openHtmlReport('/api/report', {
+                    district_name: districtName,
+                    d1,
+                    d2,
+                    store_changes: buildStoreChangesPayload(),
+                });
+
+                showStatus(districtStatus, 'success', `Reporte generado: ${districtName} | ${d1} a ${d2}`);
+            } catch (error) {
+                showStatus(districtStatus, 'error', `Error: ${error.message}`);
+            } finally {
+                districtGenerateBtn.disabled = false;
+            }
+        });
+
+        districtPdfBtn.addEventListener('click', async () => {
+            const districtName = districtSelect.value;
+            const d1 = document.getElementById('district_d1').value;
+            const d2 = document.getElementById('district_d2').value;
+
+            if (!districtName || !validateDates(d1, d2, districtStatus)) return;
+
+            districtPdfBtn.disabled = true;
+            districtGenerateBtn.disabled = true;
+            showStatus(districtStatus, 'loading', 'Generando PDF distrital...');
+
+            try {
+                await downloadFileReport('/api/report/pdf', {
+                    district_name: districtName,
+                    d1,
+                    d2,
+                    store_changes: buildStoreChangesPayload(),
+                }, 'reporte-ejecutivo-distrito.pdf');
+
+                showStatus(districtStatus, 'success', `PDF descargado: ${districtName} | ${d1} a ${d2}`);
+            } catch (error) {
+                showStatus(districtStatus, 'error', `Error: ${error.message}`);
+            } finally {
+                districtPdfBtn.disabled = false;
+                districtGenerateBtn.disabled = false;
+            }
+        });
+
+        regionalForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const region = document.getElementById('region').value;
+            const d1 = document.getElementById('regional_d1').value;
+            const d2 = document.getElementById('regional_d2').value;
+
+            if (!region || !validateDates(d1, d2, regionalStatus)) return;
+
+            regionalGenerateBtn.disabled = true;
+            showStatus(regionalStatus, 'loading', 'Generando resultados regionales...');
+
+            try {
+                await openHtmlReport('/api/regional-report', {
+                    region,
+                    d1,
+                    d2,
+                });
+
+                const regionText = region === 'nl' ? 'Nuevo León' : 'Coahuila';
+                showStatus(regionalStatus, 'success', `Reporte generado: ${regionText} | ${d1} a ${d2}`);
+            } catch (error) {
+                showStatus(regionalStatus, 'error', `Error: ${error.message}`);
+            } finally {
+                regionalGenerateBtn.disabled = false;
+            }
+        });
+
+        regionalPdfBtn.addEventListener('click', async () => {
+            const region = document.getElementById('region').value;
+            const d1 = document.getElementById('regional_d1').value;
+            const d2 = document.getElementById('regional_d2').value;
+
+            if (!region || !validateDates(d1, d2, regionalStatus)) return;
+
+            regionalPdfBtn.disabled = true;
+            regionalGenerateBtn.disabled = true;
+            showStatus(regionalStatus, 'loading', 'Generando PDF regional...');
+
+            try {
+                await downloadFileReport('/api/regional-report/pdf', {
+                    region,
+                    d1,
+                    d2,
+                }, 'reporte-regional.pdf');
+
+                const regionText = region === 'nl' ? 'Nuevo LeÃ³n' : 'Coahuila';
+                showStatus(regionalStatus, 'success', `PDF descargado: ${regionText} | ${d1} a ${d2}`);
+            } catch (error) {
+                showStatus(regionalStatus, 'error', `Error: ${error.message}`);
+            } finally {
+                regionalPdfBtn.disabled = false;
+                regionalGenerateBtn.disabled = false;
+            }
+        });
+
+        zoneForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const zoneName = zoneSelect.value;
+            const d1 = document.getElementById('zone_d1').value;
+            const d2 = document.getElementById('zone_d2').value;
+
+            if (!zoneName || !validateDates(d1, d2, zoneStatus)) return;
+
+            zoneGenerateBtn.disabled = true;
+            showStatus(zoneStatus, 'loading', 'Generando reporte por zona...');
+
+            try {
+                await openHtmlReport('/api/zone-report', {
+                    zone_name: zoneName,
+                    d1,
+                    d2,
+                    store_changes: buildZoneStoreChangesPayload(),
+                });
+                showStatus(zoneStatus, 'success', `Reporte generado: ${zoneName} | ${d1} a ${d2}`);
+            } catch (error) {
+                showStatus(zoneStatus, 'error', `Error: ${error.message}`);
+            } finally {
+                zoneGenerateBtn.disabled = false;
+            }
+        });
+
+        zonePdfBtn.addEventListener('click', async () => {
+            const zoneName = zoneSelect.value;
+            const d1 = document.getElementById('zone_d1').value;
+            const d2 = document.getElementById('zone_d2').value;
+
+            if (!zoneName || !validateDates(d1, d2, zoneStatus)) return;
+
+            zonePdfBtn.disabled = true;
+            zoneGenerateBtn.disabled = true;
+            showStatus(zoneStatus, 'loading', 'Generando PDF de zona...');
+
+            try {
+                await downloadFileReport('/api/zone-report/pdf', {
+                    zone_name: zoneName,
+                    d1,
+                    d2,
+                    store_changes: buildZoneStoreChangesPayload(),
+                }, 'reporte-zona.pdf');
+                showStatus(zoneStatus, 'success', `PDF descargado: ${zoneName} | ${d1} a ${d2}`);
+            } catch (error) {
+                showStatus(zoneStatus, 'error', `Error: ${error.message}`);
+            } finally {
+                zonePdfBtn.disabled = false;
+                zoneGenerateBtn.disabled = false;
+            }
+        });
+
+        zonalResultsForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const d1 = document.getElementById('zonal_d1').value;
+            const d2 = document.getElementById('zonal_d2').value;
+
+            if (!validateDates(d1, d2, zonalStatus)) return;
+
+            zonalGenerateBtn.disabled = true;
+            showStatus(zonalStatus, 'loading', 'Generando resultados zonales...');
+
+            try {
+                await openHtmlReport('/api/zone-regional-report', { d1, d2 });
+                showStatus(zonalStatus, 'success', `Resultados zonales generados | ${d1} a ${d2}`);
+            } catch (error) {
+                showStatus(zonalStatus, 'error', `Error: ${error.message}`);
+            } finally {
+                zonalGenerateBtn.disabled = false;
+            }
+        });
+
+        zonalPdfBtn.addEventListener('click', async () => {
+            const d1 = document.getElementById('zonal_d1').value;
+            const d2 = document.getElementById('zonal_d2').value;
+
+            if (!validateDates(d1, d2, zonalStatus)) return;
+
+            zonalPdfBtn.disabled = true;
+            zonalGenerateBtn.disabled = true;
+            showStatus(zonalStatus, 'loading', 'Generando PDF de resultados zonales...');
+
+            try {
+                await downloadFileReport('/api/zone-regional-report/pdf', { d1, d2 }, 'resultados-zonales.pdf');
+                showStatus(zonalStatus, 'success', `PDF zonal descargado | ${d1} a ${d2}`);
+            } catch (error) {
+                showStatus(zonalStatus, 'error', `Error: ${error.message}`);
+            } finally {
+                zonalPdfBtn.disabled = false;
+                zonalGenerateBtn.disabled = false;
+            }
+        });
+
+        function validateDates(d1, d2, statusElement) {
+            if (!d1 || !d2) {
+                showStatus(statusElement, 'error', 'Todos los campos son requeridos.');
+                return false;
+            }
+
+            if (new Date(d1) > new Date(d2)) {
+                showStatus(statusElement, 'error', 'La fecha inicio no puede ser mayor que la fecha fin.');
+                return false;
+            }
+
+            return true;
+        }
+
+        async function openHtmlReport(url, payload) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Error al generar el reporte');
+            }
+
+            const blob = await response.blob();
+            const reportUrl = window.URL.createObjectURL(blob);
+            window.open(reportUrl, '_blank');
+        }
+
+        async function downloadFileReport(url, payload, defaultFileName) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Error al generar el archivo');
+            }
+
+            const blob = await response.blob();
+            const reportUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = reportUrl;
+            link.download = getFileNameFromResponse(response) || defaultFileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(reportUrl);
+        }
+
+        function getFileNameFromResponse(response) {
+            const disposition = response.headers.get('Content-Disposition') || '';
+            const match = /filename="?([^"]+)"?/i.exec(disposition);
+            return match ? match[1] : '';
+        }
+
+        function showStatus(element, type, message) {
+            element.className = `status ${type}`;
+            element.textContent = message;
+        }
+    </script>
+</body>
+</html>

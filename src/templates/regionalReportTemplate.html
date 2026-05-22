@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados Regionales - <%= region.label %></title>
+    <style>
+        :root {
+            --ink: #202833;
+            --muted: #5f6b76;
+            --soft: #f5f6f7;
+            --paper: #ffffff;
+            --line: #d8dde3;
+            --line-dark: #aeb6bf;
+            --accent: #c45b18;
+            --navy: #243142;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #e9edf1;
+            color: var(--ink);
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .report {
+            width: min(1180px, calc(100% - 32px));
+            min-height: 100vh;
+            margin: 0 auto;
+            padding: 24px 30px 28px;
+            background: var(--paper);
+        }
+
+        .report-header {
+            display: flex;
+            align-items: center;
+            min-height: 120px;
+            padding-bottom: 0;
+            border-bottom: 2px solid var(--line);
+            overflow: hidden;
+        }
+
+        .brand-logo {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        .logo-placeholder {
+            display: grid;
+            place-items: center;
+            width: 100%;
+            height: 120px;
+            border: 1px dashed var(--line-dark);
+            color: var(--muted);
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .report-subheader {
+            margin-top: 18px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .eyebrow {
+            margin-bottom: 2px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            color: var(--navy);
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1.15;
+        }
+
+        .period {
+            margin-top: 7px;
+            color: var(--ink);
+            font-size: 12px;
+        }
+
+        .period strong {
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .regional-overview {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .regional-breakdown {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .activity-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .activity-card {
+            display: grid;
+            grid-template-columns: 132px minmax(0, 1fr);
+            align-items: center;
+            gap: 18px;
+            min-height: 156px;
+            padding: 16px;
+            background: var(--soft);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+        }
+
+        .activity-pie {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(var(--navy) 0deg, var(--navy) var(--active-deg), var(--accent) var(--active-deg), var(--accent) 360deg);
+        }
+
+        .activity-pie::after {
+            content: "";
+            position: absolute;
+            inset: 22px;
+            border-radius: 50%;
+            background: var(--soft);
+        }
+
+        .activity-pie-label {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            display: grid;
+            place-items: center;
+            color: var(--navy);
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .activity-title {
+            color: var(--navy);
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .activity-stats {
+            display: grid;
+            gap: 7px;
+            margin-top: 12px;
+        }
+
+        .activity-stat {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .activity-stat strong {
+            color: var(--ink);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .legend-dot {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            margin-right: 6px;
+            border-radius: 50%;
+            vertical-align: middle;
+        }
+
+        .legend-dot.active {
+            background: var(--navy);
+        }
+
+        .legend-dot.inactive {
+            background: var(--accent);
+        }
+
+        .scatter-card {
+            min-height: 100%;
+            padding: 16px;
+            background: var(--soft);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+        }
+
+        .chart-title {
+            color: var(--navy);
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .plot-area {
+            position: relative;
+            min-height: 290px;
+            margin-top: 12px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+        }
+
+        .plot-area[data-empty="true"]::after {
+            content: "Sin datos suficientes";
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .axis-label {
+            position: absolute;
+            z-index: 1;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .axis-label.x {
+            right: 18px;
+            bottom: 8px;
+        }
+
+        .axis-label.y {
+            top: 14px;
+            left: 10px;
+            transform: rotate(-90deg) translateX(-100%);
+            transform-origin: left top;
+        }
+
+        .time-section {
+            display: grid;
+            gap: 16px;
+        }
+
+        .check-title {
+            margin: 16px 0 8px;
+            color: var(--navy);
+            font-size: 16px;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .time-summary-table {
+            min-width: 760px;
+        }
+
+        .print-page-header,
+        .print-page-subheader {
+            display: none;
+        }
+
+        .pdf-report {
+            display: none;
+        }
+
+        .metric-card {
+            min-height: 72px;
+            padding: 12px 14px;
+            background: var(--soft);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--line-dark);
+            border-radius: 4px;
+        }
+
+        .metric-card.primary {
+            border-left-color: var(--navy);
+            background: #eef1f4;
+        }
+
+        .metric-card.region {
+            border-left-color: var(--accent);
+        }
+
+        .metric-card.offline {
+            border-left-color: var(--accent);
+        }
+
+        .metric-value {
+            color: var(--navy);
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .metric-label {
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .section {
+            margin-top: 26px;
+        }
+
+        .section-title {
+            margin-bottom: 10px;
+            color: var(--navy);
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 860px;
+            border-collapse: collapse;
+        }
+
+        .ranking-table {
+            min-width: 720px;
+        }
+
+        thead {
+            background: #eef1f4;
+        }
+
+        th {
+            padding: 9px 10px;
+            color: var(--navy);
+            border-bottom: 1px solid var(--line-dark);
+            font-size: 11px;
+            font-weight: 800;
+            text-align: left;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 9px 10px;
+            border-bottom: 1px solid var(--line);
+            color: var(--ink);
+            font-size: 12px;
+            vertical-align: middle;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #fafbfc;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .numeric {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .ranking {
+            color: var(--navy);
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .report-link {
+            color: #7c3510;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .report-link:hover {
+            text-decoration: underline;
+        }
+
+        .empty-state {
+            padding: 28px;
+            color: var(--muted);
+            text-align: center;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            background: var(--soft);
+        }
+
+        .page-footer {
+            margin-top: 28px;
+            padding-top: 12px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 10px;
+            text-align: right;
+        }
+
+        @media (max-width: 840px) {
+            .report {
+                width: 100%;
+                padding: 18px;
+            }
+
+            .regional-breakdown {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .regional-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .activity-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .regional-breakdown {
+                grid-template-columns: 1fr;
+            }
+
+            .activity-card {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                text-align: center;
+            }
+
+            .activity-stat {
+                width: 100%;
+            }
+        }
+
+        @media print {
+            @page {
+                size: 8.5in 11in;
+                margin: 0;
+            }
+
+            html,
+            body {
+                width: 215.9mm;
+                min-height: 279.4mm;
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .report {
+                display: none !important;
+            }
+
+            .pdf-report {
+                display: block;
+                color: var(--ink);
+                background: white;
+            }
+
+            .pdf-page {
+                box-sizing: border-box;
+                width: 215.9mm;
+                height: 279.4mm;
+                padding: 5mm 7mm 6mm;
+                overflow: hidden;
+                background: var(--paper);
+                page-break-after: always;
+                break-after: page;
+            }
+
+            .pdf-page:last-child {
+                page-break-after: auto;
+                break-after: auto;
+            }
+
+            .pdf-header {
+                margin-bottom: 3mm;
+            }
+
+            .pdf-header-logo {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 22mm;
+                padding-bottom: 1mm;
+                border-bottom: 1.5px solid var(--line);
+                overflow: hidden;
+            }
+
+            .pdf-brand-logo {
+                display: block;
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                object-position: center;
+            }
+
+            .pdf-logo-placeholder {
+                display: grid;
+                place-items: center;
+                width: 100%;
+                height: 100%;
+                border: 1px dashed var(--line-dark);
+                color: var(--muted);
+                font-size: 8px;
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+
+            .pdf-subheader {
+                display: flex;
+                align-items: flex-end;
+                justify-content: space-between;
+                gap: 8mm;
+                padding: 2mm 0;
+                border-bottom: 1px solid var(--line);
+            }
+
+            .pdf-eyebrow {
+                margin-bottom: 1mm;
+                color: var(--muted);
+                font-size: 7px;
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+
+            .pdf-title {
+                color: var(--navy);
+                font-size: 15px;
+                font-weight: 800;
+                line-height: 1.05;
+            }
+
+            .pdf-period {
+                color: var(--ink);
+                font-size: 8px;
+                font-weight: 700;
+                text-align: right;
+                white-space: nowrap;
+            }
+
+            .pdf-regional-breakdown {
+                display: grid;
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+                gap: 1.4mm;
+                margin-top: 3mm;
+            }
+
+            .pdf-metric {
+                min-height: 14mm;
+                padding: 2mm;
+                border: 1px solid var(--line);
+                border-left: 2px solid var(--line-dark);
+                border-radius: 3px;
+                background: var(--soft);
+            }
+
+            .pdf-metric.primary {
+                border-left-color: var(--navy);
+            }
+
+            .pdf-metric.offline {
+                border-left-color: var(--accent);
+            }
+
+            .pdf-metric-value {
+                color: var(--navy);
+                font-size: 14px;
+                font-weight: 800;
+                line-height: 1;
+            }
+
+            .pdf-metric-label {
+                margin-top: 1.5mm;
+                color: var(--muted);
+                font-size: 6.5px;
+                font-weight: 800;
+            }
+
+            .pdf-overview {
+                display: grid;
+                grid-template-columns: 50mm minmax(0, 1fr);
+                gap: 4mm;
+                margin-top: 3mm;
+            }
+
+            .pdf-activity-card,
+            .pdf-scatter-card {
+                padding: 2.5mm;
+                border: 1px solid var(--line);
+                border-radius: 3px;
+                background: var(--soft);
+            }
+
+            .pdf-activity-card {
+                display: grid;
+                grid-template-columns: 26mm 1fr;
+                align-items: center;
+                gap: 3mm;
+            }
+
+            .pdf-activity-pie {
+                position: relative;
+                width: 25mm;
+                height: 25mm;
+                border-radius: 50%;
+                background: conic-gradient(var(--navy) 0deg, var(--navy) var(--active-deg), var(--accent) var(--active-deg), var(--accent) 360deg);
+            }
+
+            .pdf-activity-pie::after {
+                content: "";
+                position: absolute;
+                inset: 4.5mm;
+                border-radius: 50%;
+                background: var(--soft);
+            }
+
+            .pdf-activity-pie-label {
+                position: absolute;
+                inset: 0;
+                z-index: 1;
+                display: grid;
+                place-items: center;
+                color: var(--navy);
+                font-size: 9px;
+                font-weight: 800;
+            }
+
+            .pdf-activity-title,
+            .pdf-chart-title,
+            .pdf-section-title {
+                color: var(--navy);
+                font-size: 8px;
+                font-weight: 800;
+            }
+
+            .pdf-activity-stat {
+                display: flex;
+                justify-content: space-between;
+                gap: 2mm;
+                padding-top: 1mm;
+                border-bottom: 1px solid var(--line);
+                color: var(--muted);
+                font-size: 6.4px;
+                font-weight: 700;
+            }
+
+            .pdf-activity-stat strong {
+                color: var(--ink);
+            }
+
+            .pdf-plot-area {
+                min-height: 52mm;
+                margin-top: 1.5mm;
+                border: 1px solid var(--line);
+                background: white;
+            }
+
+            .pdf-plot-area svg {
+                display: block;
+                width: 100%;
+                height: 52mm;
+            }
+
+            .pdf-section {
+                margin-top: 3mm;
+            }
+
+            .pdf-table-wrap {
+                overflow: hidden;
+                border: 1px solid var(--line);
+                border-radius: 3px;
+            }
+
+            .pdf-table {
+                width: 100%;
+                min-width: 0;
+                border-collapse: collapse;
+            }
+
+            .pdf-table th,
+            .pdf-table td {
+                padding: 1mm 1.2mm;
+                border-bottom: 1px solid var(--line);
+                font-size: 6.8px;
+                line-height: 1.18;
+            }
+
+            .pdf-table th {
+                background: #eef1f4;
+                color: var(--navy);
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+
+            .pdf-table tbody tr:nth-child(even) {
+                background: #fafbfc;
+            }
+
+            .pdf-link {
+                color: #7c3510;
+                font-weight: 800;
+                text-decoration: none;
+            }
+
+            .pdf-time-section {
+                margin-top: 3mm;
+            }
+
+            .pdf-check-title {
+                margin: 2mm 0 1mm;
+                color: var(--navy);
+                font-size: 8px;
+                font-weight: 800;
+                text-align: center;
+                text-transform: uppercase;
+            }
+
+            .pdf-time-table th,
+            .pdf-time-table td {
+                padding: 0.8mm 0.7mm;
+                font-size: 6.7px;
+            }
+
+            .pdf-time-comparison {
+                margin-top: 1.2mm;
+            }
+
+            .pdf-footer {
+                margin-top: 2mm;
+                padding-top: 1mm;
+                border-top: 1px solid var(--line);
+                color: var(--muted);
+                font-size: 6px;
+                text-align: right;
+            }
+        }
+    </style>
+</head>
+<body>
+    <%
+        const regionalRows = Array.isArray(rows) ? rows : [];
+        const selectedSummary = selected_region_summary || {};
+        const selectedActivity = selectedSummary && selectedSummary.code ? [selectedSummary] : [];
+        const toNumber = (value) => {
+            if (value === null || value === undefined || value === '') return null;
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        };
+        const truncateLabel = (value, maxLen = 18) => {
+            const text = String(value || '').trim();
+            if (!text) return '';
+            return text.length <= maxLen ? text : `${text.slice(0, Math.max(0, maxLen - 1))}...`;
+        };
+        const WEIGHTS = {
+            apariencia_promedio: 0.10,
+            preparaciones_promedio: 0.40,
+            procesos_generales_promedio: 0.20,
+        };
+        const weightedScore = (row, weights) => {
+            const pairs = Object.keys(weights)
+                .map((key) => {
+                    const value = toNumber(row?.[key]);
+                    const weight = Number(weights[key] || 0);
+                    if (!Number.isFinite(value) || !Number.isFinite(weight) || weight <= 0) return null;
+                    return { value, weight };
+                })
+                .filter(Boolean);
+            if (!pairs.length) return null;
+            const total = pairs.reduce((acc, pair) => acc + pair.weight, 0);
+            return pairs.reduce((acc, pair) => acc + pair.value * pair.weight, 0) / total;
+        };
+        const scatterPoints = regionalRows
+            .map((row) => {
+                const x = weightedScore(row, WEIGHTS);
+                const y = toNumber(row?.servicio_promedio);
+                if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+                return {
+                    district: row.distrito,
+                    label: truncateLabel(row.distrito, 32),
+                    x,
+                    y,
+                    nivel: row.nivel_promedio,
+                };
+            })
+            .filter(Boolean);
+        const scatter = { points: scatterPoints, domain: { min: 0, max: 100 } };
+        const scatterViewBox = { width: 760, height: 320 };
+        const scatterMargin = { top: 18, right: 20, bottom: 34, left: 74 };
+        const scatterPlot = {
+            x: scatterMargin.left,
+            y: scatterMargin.top,
+            width: scatterViewBox.width - scatterMargin.left - scatterMargin.right,
+            height: scatterViewBox.height - scatterMargin.top - scatterMargin.bottom,
+        };
+        const scaleLinear = (value, inMin, inMax, outMin, outMax) => {
+            if (!Number.isFinite(value)) return outMin;
+            if (inMax === inMin) return outMin;
+            const t = (value - inMin) / (inMax - inMin);
+            return outMin + t * (outMax - outMin);
+        };
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+        const tickValues = [0, 20, 40, 60, 80, 100];
+        const layoutScatterLabels = (points) => {
+            const labelMinGap = 14;
+            const top = scatterPlot.y + 10;
+            const bottom = scatterPlot.y + scatterPlot.height - 8;
+            const leftLabelX = scatterPlot.x + 6;
+            const rightLabelX = scatterPlot.x + scatterPlot.width - 6;
+            const items = points.map((point) => {
+                const cx = clamp(scaleLinear(point.x, 0, 100, scatterPlot.x, scatterPlot.x + scatterPlot.width), scatterPlot.x, scatterPlot.x + scatterPlot.width);
+                const cy = clamp(scaleLinear(point.y, 0, 100, scatterPlot.y + scatterPlot.height, scatterPlot.y), scatterPlot.y, scatterPlot.y + scatterPlot.height);
+                const placeLeft = cx > scatterPlot.x + scatterPlot.width * 0.55;
+                return {
+                    ...point,
+                    cx,
+                    cy,
+                    desiredLabelY: cy,
+                    labelX: placeLeft ? leftLabelX : rightLabelX,
+                    labelAnchor: placeLeft ? 'start' : 'end',
+                    lineEndX: placeLeft ? leftLabelX + 110 : rightLabelX - 110,
+                };
+            });
+
+            const groups = [
+                items.filter((item) => item.labelAnchor === 'start').sort((a, b) => a.desiredLabelY - b.desiredLabelY),
+                items.filter((item) => item.labelAnchor === 'end').sort((a, b) => a.desiredLabelY - b.desiredLabelY),
+            ];
+
+            groups.forEach((group) => {
+                let prev = top - labelMinGap;
+                group.forEach((item) => {
+                    item.labelY = Math.max(item.desiredLabelY, prev + labelMinGap);
+                    prev = item.labelY;
+                });
+
+                const overflow = prev - bottom;
+                if (overflow > 0) {
+                    for (let index = group.length - 1; index >= 0; index--) {
+                        const item = group[index];
+                        item.labelY = index === group.length - 1
+                            ? item.labelY - overflow
+                            : Math.min(item.labelY - overflow, group[index + 1].labelY - labelMinGap);
+                    }
+                }
+
+                group.forEach((item) => {
+                    item.labelY = clamp(item.labelY, top, bottom);
+                });
+            });
+
+            return items;
+        };
+        const scatterLayout = layoutScatterLabels(scatter.points);
+        const dashIfEmpty = (value) => (value === 'N/A' || value === null || value === undefined || value === '' ? '-' : value);
+        const entityLabel = typeof entity_label !== 'undefined' ? entity_label : 'Distrito';
+        const entityLabelPlural = typeof entity_label_plural !== 'undefined' ? entity_label_plural : 'Distritos';
+    %>
+    <main class="report">
+        <header class="report-header">
+            <% if (logoExists && logoBase64) { %>
+                <img src="data:<%= logoMimeType %>;base64,<%= logoBase64 %>" alt="Logo de la compania" class="brand-logo">
+            <% } else { %>
+                <div class="logo-placeholder">Logo</div>
+            <% } %>
+        </header>
+
+        <section class="report-subheader">
+            <div class="eyebrow"><%= report_eyebrow %></div>
+            <h1><%- report_title %></h1>
+            <div class="period">
+                <strong>Periodo:</strong> <%= date_range.label %>
+                <span style="color: var(--muted);">(<%= date_range.start %> a <%= date_range.end %>)</span>
+            </div>
+        </section>
+
+        <% const levelBreakdown = summary.selected_region_level_breakdown || {}; %>
+        <% if (region.code === 'zonas') { %>
+        <section class="regional-breakdown" style="grid-template-columns: repeat(<%= 1 + rows.length %>, minmax(0, 1fr));" aria-label="Resumen zonal">
+            <div class="metric-card primary">
+                <div class="metric-value"><%= selectedSummary.nivel_promedio ?? 'N/A' %></div>
+                <div class="metric-label">Nivel Promedio</div>
+            </div>
+            <% rows.forEach((row) => { %>
+            <div class="metric-card region">
+                <div class="metric-value ranking"><%= row.zona_rank_label || 'N/A' %></div>
+                <div class="metric-label">Ranking &middot; <%= row.distrito %></div>
+            </div>
+            <% }); %>
+        </section>
+        <% } else { %>
+        <section class="regional-breakdown" aria-label="Acumulado regional por nivel">
+            <div class="metric-card primary">
+                <div class="metric-value"><%= levelBreakdown.total_stores ?? 0 %></div>
+                <div class="metric-label">Total de Tiendas</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value"><%= levelBreakdown.nivel_1 ?? 0 %></div>
+                <div class="metric-label">Nivel 1</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value"><%= levelBreakdown.nivel_2 ?? 0 %></div>
+                <div class="metric-label">Nivel 2</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value"><%= levelBreakdown.nivel_3 ?? 0 %></div>
+                <div class="metric-label">Nivel 3</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value"><%= levelBreakdown.nivel_4 ?? 0 %></div>
+                <div class="metric-label">Nivel 4</div>
+            </div>
+            <div class="metric-card offline">
+                <div class="metric-value"><%= levelBreakdown.out_of_line ?? 0 %></div>
+                <div class="metric-label">Fuera de L&iacute;nea</div>
+            </div>
+        </section>
+        <% } %>
+
+        <section class="regional-overview">
+            <% if (region.code === 'zonas' && typeof zone_stores !== 'undefined' && zone_stores && zone_stores.length > 0) { %>
+                <%
+                    const zoneGroupNames = [...new Set(zone_stores.map((s) => s.zone_name))].sort();
+                    const changeIcon = (c) => c === 'up' ? '↑' : c === 'down' ? '↓' : c === 'alert' ? '⚠' : '→';
+                    const changeColor = (c) => c === 'up' ? '#2563eb' : c === 'down' ? '#c45b18' : c === 'alert' ? '#c45b18' : '#aeb6bf';
+                %>
+                <div class="activity-grid" aria-label="Tiendas por zona con tendencia">
+                    <% zoneGroupNames.forEach((zoneName) => { %>
+                    <article class="activity-card" style="grid-template-columns: 1fr; min-height: auto;">
+                        <div>
+                            <div class="activity-title"><%= zoneName %></div>
+                            <div class="activity-stats">
+                                <% zone_stores.filter((s) => s.zone_name === zoneName).forEach((store) => { %>
+                                <div class="activity-stat">
+                                    <span>
+                                        <span style="color:<%= changeColor(store.change) %>; font-weight:800; margin-right:4px;"><%= changeIcon(store.change) %></span><%= store.location %>
+                                    </span>
+                                    <strong>N<%= store.nivel ?? '?' %></strong>
+                                </div>
+                                <% }); %>
+                            </div>
+                        </div>
+                    </article>
+                    <% }); %>
+                </div>
+            <% } else if (selectedActivity.length > 0) { %>
+                <div class="activity-grid" aria-label="Locaciones activas e inactivas de la region seleccionada">
+                    <% selectedActivity.forEach((item) => { %>
+                    <% const activeDeg = Math.max(0, Math.min(360, (Number(item.active_percent || 0) / 100) * 360)); %>
+                    <article class="activity-card">
+                        <div class="activity-pie" style="--active-deg: <%= activeDeg %>deg;">
+                            <div class="activity-pie-label"><%= item.active_percent %>%</div>
+                        </div>
+                        <div>
+                            <div class="activity-title"><%= item.label %></div>
+                            <div class="activity-stats">
+                                <div class="activity-stat">
+                                    <span><span class="legend-dot active"></span>Activas</span>
+                                    <strong><%= item.active_stores %></strong>
+                                </div>
+                                <div class="activity-stat">
+                                    <span><span class="legend-dot inactive"></span>Inactivas</span>
+                                    <strong><%= item.inactive_stores %></strong>
+                                </div>
+                                <div class="activity-stat">
+                                    <span>Total locaciones</span>
+                                    <strong><%= item.total_stores %></strong>
+                                </div>
+                                <div class="activity-stat">
+                                    <span>Nivel prom.</span>
+                                    <strong><%= item.nivel_promedio ?? 'N/A' %></strong>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                    <% }); %>
+                </div>
+            <% } %>
+
+            <div class="scatter-card">
+                <div class="chart-title">Servicio al cliente vs Operaciones</div>
+                <div class="plot-area" aria-label="Scatter regional Servicio vs Operaciones" <%= scatter.points.length ? '' : 'data-empty="true"' %>>
+                    <div class="axis-label y">Servicio al cliente</div>
+                    <div class="axis-label x">Operaciones</div>
+                    <% if (scatter.points.length > 0) { %>
+                        <svg viewBox="0 0 <%= scatterViewBox.width %> <%= scatterViewBox.height %>" role="img" aria-label="Scatter regional Servicio al cliente vs Operaciones">
+                            <rect x="<%= scatterPlot.x %>" y="<%= scatterPlot.y %>" width="<%= scatterPlot.width %>" height="<%= scatterPlot.height %>" fill="#ffffff"></rect>
+
+                            <% tickValues.forEach((tick) => { %>
+                                <%
+                                    const tx = Math.round(scaleLinear(tick, 0, 100, scatterPlot.x, scatterPlot.x + scatterPlot.width) * 100) / 100;
+                                    const ty = Math.round(scaleLinear(tick, 0, 100, scatterPlot.y + scatterPlot.height, scatterPlot.y) * 100) / 100;
+                                %>
+                                <line x1="<%= tx %>" y1="<%= scatterPlot.y %>" x2="<%= tx %>" y2="<%= scatterPlot.y + scatterPlot.height %>" stroke="rgba(174, 182, 191, 0.45)" stroke-width="1" />
+                                <line x1="<%= scatterPlot.x %>" y1="<%= ty %>" x2="<%= scatterPlot.x + scatterPlot.width %>" y2="<%= ty %>" stroke="rgba(174, 182, 191, 0.45)" stroke-width="1" />
+                                <text x="<%= tx %>" y="<%= scatterPlot.y + scatterPlot.height + 16 %>" text-anchor="middle" font-size="10" font-weight="700" fill="#5f6b76"><%= tick %></text>
+                                <text x="<%= scatterPlot.x - 8 %>" y="<%= ty + 3 %>" text-anchor="end" font-size="10" font-weight="700" fill="#5f6b76"><%= tick %></text>
+                            <% }); %>
+
+                            <line x1="<%= scatterPlot.x %>" y1="<%= scatterPlot.y + scatterPlot.height %>" x2="<%= scatterPlot.x + scatterPlot.width %>" y2="<%= scatterPlot.y + scatterPlot.height %>" stroke="#aeb6bf" stroke-width="1" />
+                            <line x1="<%= scatterPlot.x %>" y1="<%= scatterPlot.y %>" x2="<%= scatterPlot.x %>" y2="<%= scatterPlot.y + scatterPlot.height %>" stroke="#aeb6bf" stroke-width="1" />
+
+                            <% scatterLayout.forEach((p) => { %>
+                                <line x1="<%= p.lineEndX %>" y1="<%= p.labelY %>" x2="<%= p.cx %>" y2="<%= p.cy %>" stroke="rgba(36, 49, 66, 0.24)" stroke-width="1" />
+                                <circle cx="<%= p.cx %>" cy="<%= p.cy %>" r="6.5" fill="#243142" opacity="0.9">
+                                    <title><%= p.district %> (Operaciones: <%= Math.round(p.x * 10) / 10 %>, Servicio: <%= Math.round(p.y * 10) / 10 %>)</title>
+                                </circle>
+                                <text x="<%= p.labelX %>" y="<%= p.labelY + 3 %>" text-anchor="<%= p.labelAnchor %>" font-size="10" font-weight="700" fill="#243142"><%= p.label %></text>
+                            <% }); %>
+                        </svg>
+                    <% } %>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <% if (rows.length > 0) { %>
+                <div class="section-title"><%= entityLabelPlural %> de la regi&oacute;n</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><%= entityLabel %></th>
+                                <th class="numeric">Nivel Promedio</th>
+                                <th class="numeric">Tiendas Activas</th>
+                                <th class="numeric">Puntaje Promedio</th>
+                                <th class="numeric">Servicio Promedio</th>
+                                <th class="numeric">Apariencia Promedio</th>
+                                <th class="numeric">Proc. Gen Promedio</th>
+                                <th class="center">Informe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% rows.forEach((row) => { %>
+                                <tr>
+                                    <td><strong><%= row.distrito %></strong></td>
+                                    <td class="numeric"><%= row.nivel_promedio ?? 'N/A' %></td>
+                                    <td class="numeric"><%= row.tiendas_activas %></td>
+                                    <td class="numeric"><%= row.puntaje_promedio ?? 'N/A' %></td>
+                                    <td class="numeric"><%= row.servicio_promedio ?? 'N/A' %></td>
+                                    <td class="numeric"><%= row.apariencia_promedio ?? 'N/A' %></td>
+                                    <td class="numeric"><%= row.procesos_generales_promedio ?? 'N/A' %></td>
+                                    <td class="center">
+                                        <a href="<%= row.informe_url %>" target="_blank" class="report-link">Ver</a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="empty-state">No hay datos regionales para el periodo seleccionado.</div>
+            <% } %>
+        </section>
+
+        <% const regionalTimeReport = time_checks && Array.isArray(time_checks.checks) ? time_checks : null; %>
+        <% if (regionalTimeReport && regionalTimeReport.checks.length > 0) { %>
+            <section class="section time-section">
+                <div class="print-page-header">
+                    <% if (logoExists && logoBase64) { %>
+                        <img src="data:<%= logoMimeType %>;base64,<%= logoBase64 %>" alt="Logo de la compania" class="brand-logo">
+                    <% } else { %>
+                        <div class="logo-placeholder">Logo</div>
+                    <% } %>
+                </div>
+                <div class="print-page-subheader">
+                    <div class="eyebrow">Resultados regionales</div>
+                    <h1>Regi&oacute;n: <%= region.label %></h1>
+                    <div class="period">
+                        <strong>Periodo:</strong> <%= date_range.label %>
+                        <span style="color: var(--muted);">(<%= date_range.start %> a <%= date_range.end %>)</span>
+                    </div>
+                </div>
+                <div class="section-title">Tabla Comparativa de <%= entityLabelPlural %> de la regi&oacute;n</div>
+                <% regionalTimeReport.checks.forEach((check) => { %>
+                    <div>
+                        <div class="check-title"><%= check.title %></div>
+                        <% const isZoneTimeCheck = Array.isArray(check.zones); %>
+                        <div class="table-wrap">
+                            <table class="time-summary-table">
+                                <thead>
+                                    <tr>
+                                        <th><%= isZoneTimeCheck ? 'ZONA' : 'REGION' %></th>
+                                        <th class="numeric">TIEMPO PROMEDIO</th>
+                                        <th class="numeric">DIF SEG SEMANA ANT.</th>
+                                        <% if (check.mode !== 'time_only') { %>
+                                            <th class="numeric">% TRANS &lt; 1:00MIN</th>
+                                            <th class="numeric">DESEMPE&Ntilde;O SEMANA ANT.</th>
+                                        <% } %>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% const summaryRows = isZoneTimeCheck ? check.zones : [check.country, ...check.regions]; %>
+                                    <% summaryRows.forEach((row) => { %>
+                                        <tr>
+                                            <td><strong><%= row.label %></strong></td>
+                                            <td class="numeric"><%= dashIfEmpty(row.avg_label) %></td>
+                                            <td class="numeric"><%= dashIfEmpty(row.diff_seconds_previous_label) %></td>
+                                            <% if (check.mode !== 'time_only') { %>
+                                                <td class="numeric"><%= dashIfEmpty(row.less_than_60_label) %></td>
+                                                <td class="numeric"><%= dashIfEmpty(row.performance_previous_label) %></td>
+                                            <% } %>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="table-wrap" style="margin-top: 10px;">
+                            <table class="time-summary-table">
+                                <thead>
+                                    <tr>
+                                        <th><%= isZoneTimeCheck ? 'LOCACI&Oacute;N' : 'DISTRITO' %></th>
+                                        <% if (isZoneTimeCheck && check.mode === 'time_only') { %>
+                                            <th class="numeric">AVG</th>
+                                            <th class="numeric">DIF</th>
+                                            <th class="numeric">AVG DIF SEM</th>
+                                        <% } else { %>
+                                            <th class="numeric">TIEMPO AVG</th>
+                                            <th class="numeric">DIF SOBRE AVG</th>
+                                            <th class="numeric">DIF SEG SEMANA ANT.</th>
+                                            <% if (check.mode !== 'time_only') { %>
+                                                <th class="numeric">% &lt; 1:00MIN</th>
+                                                <th class="numeric">DIF %</th>
+                                                <th class="numeric">DESEMPE&Ntilde;O SEMANA ANTERIOR</th>
+                                            <% } %>
+                                        <% } %>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% const comparisonRows = isZoneTimeCheck ? check.locations : [check.selected_region, ...check.districts]; %>
+                                    <% comparisonRows.forEach((row) => { %>
+                                        <tr>
+                                            <td><%= row.location || row.label %></td>
+                                            <td class="numeric"><%= dashIfEmpty(row.avg_label) %></td>
+                                            <td class="numeric"><%= dashIfEmpty(row.diff_seconds_average_label || row.diff_seconds_region_label) %></td>
+                                            <td class="numeric"><%= dashIfEmpty(row.diff_seconds_previous_label) %></td>
+                                            <% if (!isZoneTimeCheck && check.mode !== 'time_only') { %>
+                                                <td class="numeric"><%= dashIfEmpty(row.less_than_60_label) %></td>
+                                                <td class="numeric"><%= dashIfEmpty(row.diff_percent_zone_label || row.diff_percent_region_label) %></td>
+                                                <td class="numeric"><%= dashIfEmpty(row.performance_previous_label) %></td>
+                                            <% } else if (isZoneTimeCheck && check.mode !== 'time_only') { %>
+                                                <td class="numeric"><%= dashIfEmpty(row.less_than_60_label) %></td>
+                                                <td class="numeric"><%= dashIfEmpty(row.diff_percent_zone_label || row.diff_percent_region_label) %></td>
+                                                <td class="numeric"><%= dashIfEmpty(row.performance_previous_label) %></td>
+                                            <% } %>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                <% }); %>
+            </section>
+        <% } %>
+
+        <footer class="page-footer">
+            Reporte generado: <%= new Date().toLocaleString('es-ES') %>
+        </footer>
+    </main>
+
+    <div class="pdf-report" aria-hidden="true">
+        <section class="pdf-page">
+            <header class="pdf-header">
+                <div class="pdf-header-logo">
+                    <% if (logoExists && logoBase64) { %>
+                        <img src="data:<%= logoMimeType %>;base64,<%= logoBase64 %>" alt="Logo de la compania" class="pdf-brand-logo">
+                    <% } else { %>
+                        <div class="pdf-logo-placeholder">Logo</div>
+                    <% } %>
+                </div>
+                <div class="pdf-subheader">
+                    <div>
+                        <div class="pdf-eyebrow"><%= report_eyebrow %></div>
+                        <div class="pdf-title"><%- report_title %></div>
+                    </div>
+                    <div class="pdf-period">Periodo: <%= date_range.label %></div>
+                </div>
+            </header>
+
+            <% if (region.code === 'zonas') { %>
+            <section class="pdf-regional-breakdown" style="grid-template-columns: repeat(<%= 1 + rows.length %>, minmax(0, 1fr));" aria-label="Resumen zonal PDF">
+                <div class="pdf-metric primary">
+                    <div class="pdf-metric-value"><%= selectedSummary.nivel_promedio ?? 'N/A' %></div>
+                    <div class="pdf-metric-label">Nivel Promedio</div>
+                </div>
+                <% rows.forEach((row) => { %>
+                <div class="pdf-metric">
+                    <div class="pdf-metric-value"><%= row.zona_rank_label || 'N/A' %></div>
+                    <div class="pdf-metric-label">Ranking &middot; <%= row.distrito %></div>
+                </div>
+                <% }); %>
+            </section>
+            <% } else { %>
+            <section class="pdf-regional-breakdown" aria-label="Acumulado regional por nivel PDF">
+                <div class="pdf-metric primary">
+                    <div class="pdf-metric-value"><%= levelBreakdown.total_stores ?? 0 %></div>
+                    <div class="pdf-metric-label">Total de Tiendas</div>
+                </div>
+                <div class="pdf-metric">
+                    <div class="pdf-metric-value"><%= levelBreakdown.nivel_1 ?? 0 %></div>
+                    <div class="pdf-metric-label">Nivel 1</div>
+                </div>
+                <div class="pdf-metric">
+                    <div class="pdf-metric-value"><%= levelBreakdown.nivel_2 ?? 0 %></div>
+                    <div class="pdf-metric-label">Nivel 2</div>
+                </div>
+                <div class="pdf-metric">
+                    <div class="pdf-metric-value"><%= levelBreakdown.nivel_3 ?? 0 %></div>
+                    <div class="pdf-metric-label">Nivel 3</div>
+                </div>
+                <div class="pdf-metric">
+                    <div class="pdf-metric-value"><%= levelBreakdown.nivel_4 ?? 0 %></div>
+                    <div class="pdf-metric-label">Nivel 4</div>
+                </div>
+                <div class="pdf-metric offline">
+                    <div class="pdf-metric-value"><%= levelBreakdown.out_of_line ?? 0 %></div>
+                    <div class="pdf-metric-label">Fuera de L&iacute;nea</div>
+                </div>
+            </section>
+            <% } %>
+
+            <section class="pdf-overview">
+                <% if (region.code === 'zonas' && typeof zone_stores !== 'undefined' && zone_stores && zone_stores.length > 0) { %>
+                    <% const pdfZoneGroupNames = [...new Set(zone_stores.map((s) => s.zone_name))].sort(); %>
+                    <div style="display: grid; gap: 2mm;">
+                        <% pdfZoneGroupNames.forEach((pdfZoneName) => { %>
+                        <article class="pdf-activity-card" style="grid-template-columns: 1fr; padding: 2mm;">
+                            <div>
+                                <div class="pdf-activity-title"><%= pdfZoneName %></div>
+                                <% zone_stores.filter((s) => s.zone_name === pdfZoneName).forEach((store) => { %>
+                                <div class="pdf-activity-stat">
+                                    <span>
+                                        <% if (store.change === 'up') { %><span style="color:#2563eb;">&#8593;</span>
+                                        <% } else if (store.change === 'down') { %><span style="color:#c45b18;">&#8595;</span>
+                                        <% } else if (store.change === 'alert') { %><span style="color:#c45b18;">&#9888;</span>
+                                        <% } else { %><span style="color:#aeb6bf;">&#8594;</span><% } %>
+                                        <%= store.location %>
+                                    </span>
+                                    <strong>N<%= store.nivel ?? '?' %></strong>
+                                </div>
+                                <% }); %>
+                            </div>
+                        </article>
+                        <% }); %>
+                    </div>
+                <% } else if (selectedActivity.length > 0) { %>
+                    <% const pdfActivity = selectedActivity[0]; %>
+                    <% const pdfActiveDeg = Math.max(0, Math.min(360, (Number(pdfActivity.active_percent || 0) / 100) * 360)); %>
+                    <article class="pdf-activity-card">
+                        <div class="pdf-activity-pie" style="--active-deg: <%= pdfActiveDeg %>deg;">
+                            <div class="pdf-activity-pie-label"><%= pdfActivity.active_percent %>%</div>
+                        </div>
+                        <div>
+                            <div class="pdf-activity-title"><%= pdfActivity.label %></div>
+                            <div class="pdf-activity-stat"><span>Activas</span><strong><%= pdfActivity.active_stores %></strong></div>
+                            <div class="pdf-activity-stat"><span>Inactivas</span><strong><%= pdfActivity.inactive_stores %></strong></div>
+                            <div class="pdf-activity-stat"><span>Total locaciones</span><strong><%= pdfActivity.total_stores %></strong></div>
+                            <div class="pdf-activity-stat"><span>Nivel prom.</span><strong><%= pdfActivity.nivel_promedio ?? 'N/A' %></strong></div>
+                        </div>
+                    </article>
+                <% } %>
+
+                <div class="pdf-scatter-card">
+                    <div class="pdf-chart-title">Servicio al cliente vs Operaciones</div>
+                    <div class="pdf-plot-area" aria-label="Scatter regional PDF" <%= scatter.points.length ? '' : 'data-empty="true"' %>>
+                        <% if (scatter.points.length > 0) { %>
+                            <svg viewBox="0 0 <%= scatterViewBox.width %> <%= scatterViewBox.height %>" role="img" aria-label="Scatter regional Servicio al cliente vs Operaciones PDF">
+                                <rect x="<%= scatterPlot.x %>" y="<%= scatterPlot.y %>" width="<%= scatterPlot.width %>" height="<%= scatterPlot.height %>" fill="#ffffff"></rect>
+
+                                <% tickValues.forEach((tick) => { %>
+                                    <%
+                                        const tx = Math.round(scaleLinear(tick, 0, 100, scatterPlot.x, scatterPlot.x + scatterPlot.width) * 100) / 100;
+                                        const ty = Math.round(scaleLinear(tick, 0, 100, scatterPlot.y + scatterPlot.height, scatterPlot.y) * 100) / 100;
+                                    %>
+                                    <line x1="<%= tx %>" y1="<%= scatterPlot.y %>" x2="<%= tx %>" y2="<%= scatterPlot.y + scatterPlot.height %>" stroke="rgba(174, 182, 191, 0.45)" stroke-width="1" />
+                                    <line x1="<%= scatterPlot.x %>" y1="<%= ty %>" x2="<%= scatterPlot.x + scatterPlot.width %>" y2="<%= ty %>" stroke="rgba(174, 182, 191, 0.45)" stroke-width="1" />
+                                    <text x="<%= tx %>" y="<%= scatterPlot.y + scatterPlot.height + 14 %>" text-anchor="middle" font-size="9" font-weight="700" fill="#5f6b76"><%= tick %></text>
+                                    <text x="<%= scatterPlot.x - 8 %>" y="<%= ty + 3 %>" text-anchor="end" font-size="9" font-weight="700" fill="#5f6b76"><%= tick %></text>
+                                <% }); %>
+
+                                <line x1="<%= scatterPlot.x %>" y1="<%= scatterPlot.y + scatterPlot.height %>" x2="<%= scatterPlot.x + scatterPlot.width %>" y2="<%= scatterPlot.y + scatterPlot.height %>" stroke="#aeb6bf" stroke-width="1" />
+                                <line x1="<%= scatterPlot.x %>" y1="<%= scatterPlot.y %>" x2="<%= scatterPlot.x %>" y2="<%= scatterPlot.y + scatterPlot.height %>" stroke="#aeb6bf" stroke-width="1" />
+
+                                <% scatterLayout.forEach((p) => { %>
+                                    <line x1="<%= p.lineEndX %>" y1="<%= p.labelY %>" x2="<%= p.cx %>" y2="<%= p.cy %>" stroke="rgba(36, 49, 66, 0.24)" stroke-width="1" />
+                                    <circle cx="<%= p.cx %>" cy="<%= p.cy %>" r="5.6" fill="#243142" opacity="0.92"></circle>
+                                    <text x="<%= p.labelX %>" y="<%= p.labelY + 3 %>" text-anchor="<%= p.labelAnchor %>" font-size="8" font-weight="800" fill="#243142"><%= p.label %></text>
+                                <% }); %>
+                            </svg>
+                        <% } %>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pdf-section">
+                <div class="pdf-section-title"><%= entityLabelPlural %> de la regi&oacute;n</div>
+                <% if (regionalRows.length > 0) { %>
+                    <div class="pdf-table-wrap">
+                        <table class="pdf-table">
+                            <thead>
+                                <tr>
+                                    <th><%= entityLabel %></th>
+                                    <th class="numeric">Nivel Prom</th>
+                                    <th class="numeric">Activas</th>
+                                    <th class="numeric">Puntaje</th>
+                                    <th class="numeric">Servicio</th>
+                                    <th class="numeric">Apariencia</th>
+                                    <th class="numeric">Proc. Gen</th>
+                                    <th class="center">Informe</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% regionalRows.forEach((row) => { %>
+                                    <tr>
+                                        <td><strong><%= row.distrito %></strong></td>
+                                        <td class="numeric"><%= row.nivel_promedio ?? 'N/A' %></td>
+                                        <td class="numeric"><%= row.tiendas_activas %></td>
+                                        <td class="numeric"><%= row.puntaje_promedio ?? 'N/A' %></td>
+                                        <td class="numeric"><%= row.servicio_promedio ?? 'N/A' %></td>
+                                        <td class="numeric"><%= row.apariencia_promedio ?? 'N/A' %></td>
+                                        <td class="numeric"><%= row.procesos_generales_promedio ?? 'N/A' %></td>
+                                        <td class="center"><a href="<%= row.informe_url %>" class="pdf-link">Ver</a></td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="empty-state">No hay datos regionales para el periodo seleccionado.</div>
+                <% } %>
+            </section>
+
+            <footer class="pdf-footer">
+                Reporte generado: <%= new Date().toLocaleString('es-ES') %>
+            </footer>
+        </section>
+
+        <section class="pdf-page">
+            <header class="pdf-header">
+                <div class="pdf-header-logo">
+                    <% if (logoExists && logoBase64) { %>
+                        <img src="data:<%= logoMimeType %>;base64,<%= logoBase64 %>" alt="Logo de la compania" class="pdf-brand-logo">
+                    <% } else { %>
+                        <div class="pdf-logo-placeholder">Logo</div>
+                    <% } %>
+                </div>
+                <div class="pdf-subheader">
+                    <div>
+                        <div class="pdf-eyebrow"><%= report_eyebrow %></div>
+                        <div class="pdf-title"><%- report_title %></div>
+                    </div>
+                    <div class="pdf-period">Periodo: <%= date_range.label %></div>
+                </div>
+            </header>
+
+            <% if (regionalTimeReport && regionalTimeReport.checks.length > 0) { %>
+                <section class="pdf-time-section">
+                    <div class="pdf-section-title">Tabla Comparativa de <%= entityLabelPlural %> de la regi&oacute;n</div>
+                    <% regionalTimeReport.checks.forEach((check) => { %>
+                        <% const pdfIsZoneTimeCheck = Array.isArray(check.zones); %>
+                        <div class="pdf-check-title"><%= check.title %></div>
+                        <div class="pdf-table-wrap">
+                            <table class="pdf-table pdf-time-table">
+                                <thead>
+                                    <tr>
+                                        <th><%= pdfIsZoneTimeCheck ? 'ZONA' : 'REGION' %></th>
+                                        <th class="numeric">TIEMPO PROMEDIO</th>
+                                        <th class="numeric">DIF SEG SEMANA ANT.</th>
+                                        <% if (check.mode !== 'time_only') { %>
+                                            <th class="numeric">% TRANS &lt; 1:00MIN</th>
+                                            <th class="numeric">DESEMPE&Ntilde;O SEMANA ANT.</th>
+                                        <% } %>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% const pdfSummaryRows = pdfIsZoneTimeCheck ? check.zones : [check.country, ...check.regions]; %>
+                                    <% pdfSummaryRows.forEach((row) => { %>
+                                        <tr>
+                                            <td><strong><%= row.label %></strong></td>
+                                            <td class="numeric"><%= dashIfEmpty(row.avg_label) %></td>
+                                            <td class="numeric"><%= dashIfEmpty(row.diff_seconds_previous_label) %></td>
+                                            <% if (check.mode !== 'time_only') { %>
+                                                <td class="numeric"><%= dashIfEmpty(row.less_than_60_label) %></td>
+                                                <td class="numeric"><%= dashIfEmpty(row.performance_previous_label) %></td>
+                                            <% } %>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="pdf-table-wrap pdf-time-comparison">
+                            <table class="pdf-table pdf-time-table">
+                                <thead>
+                                    <tr>
+                                        <th><%= pdfIsZoneTimeCheck ? 'LOCACI&Oacute;N' : 'DISTRITO' %></th>
+                                        <% if (pdfIsZoneTimeCheck && check.mode === 'time_only') { %>
+                                            <th class="numeric">AVG</th>
+                                            <th class="numeric">DIF</th>
+                                            <th class="numeric">AVG DIF SEM</th>
+                                        <% } else { %>
+                                            <th class="numeric">TIEMPO AVG</th>
+                                            <th class="numeric">DIF SOBRE AVG</th>
+                                            <th class="numeric">DIF SEG SEMANA ANT.</th>
+                                            <% if (check.mode !== 'time_only') { %>
+                                                <th class="numeric">% &lt; 1:00MIN</th>
+                                                <th class="numeric">DIF %</th>
+                                                <th class="numeric">DESEMPE&Ntilde;O SEMANA ANTERIOR</th>
+                                            <% } %>
+                                        <% } %>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% const pdfComparisonRows = pdfIsZoneTimeCheck ? check.locations : [check.selected_region, ...check.districts]; %>
+                                    <% pdfComparisonRows.forEach((row) => { %>
+                                        <tr>
+                                            <td><%= row.location || row.label %></td>
+                                            <td class="numeric"><%= dashIfEmpty(row.avg_label) %></td>
+                                            <td class="numeric"><%= dashIfEmpty(row.diff_seconds_average_label || row.diff_seconds_region_label) %></td>
+                                            <td class="numeric"><%= dashIfEmpty(row.diff_seconds_previous_label) %></td>
+                                            <% if (!pdfIsZoneTimeCheck && check.mode !== 'time_only') { %>
+                                                <td class="numeric"><%= dashIfEmpty(row.less_than_60_label) %></td>
+                                                <td class="numeric"><%= dashIfEmpty(row.diff_percent_zone_label || row.diff_percent_region_label) %></td>
+                                                <td class="numeric"><%= dashIfEmpty(row.performance_previous_label) %></td>
+                                            <% } else if (pdfIsZoneTimeCheck && check.mode !== 'time_only') { %>
+                                                <td class="numeric"><%= dashIfEmpty(row.less_than_60_label) %></td>
+                                                <td class="numeric"><%= dashIfEmpty(row.diff_percent_zone_label || row.diff_percent_region_label) %></td>
+                                                <td class="numeric"><%= dashIfEmpty(row.performance_previous_label) %></td>
+                                            <% } %>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% }); %>
+                </section>
+            <% } %>
+
+            <footer class="pdf-footer">
+                Reporte generado: <%= new Date().toLocaleString('es-ES') %>
+            </footer>
+        </section>
+    </div>
+</body>
+</html>

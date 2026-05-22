@@ -1,0 +1,2404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Distrito - <%= district.name %></title>
+    <style>
+        :root {
+            --ink: #202833;
+            --muted: #5f6b76;
+            --soft: #f5f6f7;
+            --paper: #ffffff;
+            --line: #d8dde3;
+            --line-dark: #aeb6bf;
+            --accent: #c45b18;
+            --accent-dark: #7c3510;
+            --navy: #243142;
+            /* Paleta por nivel (diferente a colores de texto del panel) */
+            --nivel-1: #2563eb; /* azul */
+            --nivel-2: #7c3aed; /* morado */
+            --nivel-3: #0d9488; /* teal */
+            --nivel-4: #f59e0b; /* ámbar */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #e9edf1;
+            color: var(--ink);
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .report {
+            width: min(1100px, calc(100% - 32px));
+            min-height: 100vh;
+            margin: 0 auto;
+            padding: 24px 30px 28px;
+            background: var(--paper);
+        }
+
+        .report-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 120px;
+            padding-bottom: 0;
+            border-bottom: 2px solid var(--line);
+            overflow: hidden;
+        }
+
+        .brand-logo {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+            object-position: center;
+        }
+
+        .logo-placeholder {
+            display: grid;
+            place-items: center;
+            width: 100%;
+            height: 100%;
+            border: 1px dashed var(--line-dark);
+            color: var(--muted);
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .report-subheader {
+            margin-top: 18px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .eyebrow {
+            margin-bottom: 2px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            color: var(--navy);
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1.15;
+        }
+
+        .period {
+            margin-top: 7px;
+            color: var(--ink);
+            font-size: 12px;
+        }
+
+        .period strong {
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .report-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .download-link {
+            min-height: 34px;
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            background: var(--soft);
+            color: var(--navy);
+            font-size: 12px;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .download-link:hover {
+            background: #eceff2;
+        }
+
+        .overview {
+            display: grid;
+            grid-template-columns: 190px minmax(0, 1fr);
+            gap: 24px;
+            margin-top: 24px;
+            align-items: stretch;
+        }
+
+        .ranking-strip {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 24px;
+        }
+
+        .ranking-card {
+            min-height: 58px;
+            padding: 10px 12px;
+            background: var(--soft);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--line-dark);
+            border-radius: 4px;
+        }
+
+        .ranking-card.primary {
+            border-left-color: var(--navy);
+            background: #eef1f4;
+        }
+
+        .ranking-value {
+            color: var(--navy);
+            font-size: 20px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .ranking-label {
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 800;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+
+        .metrics-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .metric-card {
+            display: grid;
+            grid-template-columns: 58px 1fr;
+            align-items: center;
+            min-height: 42px;
+            padding: 7px 10px;
+            background: var(--soft);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--line-dark);
+            border-radius: 4px;
+        }
+
+        .metric-card.total {
+            border-left-color: var(--navy);
+            background: #eef1f4;
+        }
+
+        .metric-card.level-1 { border-left-color: var(--nivel-1); }
+        .metric-card.level-2 { border-left-color: var(--nivel-2); }
+        .metric-card.level-3 { border-left-color: var(--nivel-3); }
+        .metric-card.level-4 { border-left-color: var(--nivel-4); }
+
+        .metric-card.offline {
+            border-left-color: var(--accent);
+        }
+
+        .metric-value {
+            color: var(--navy);
+            font-size: 23px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .metric-label {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .scatter-card {
+            min-height: 360px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            background: #fbfcfd;
+            padding: 14px 16px 16px;
+        }
+
+        .chart-title {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .plot-area {
+            position: relative;
+            height: 360px;
+            margin-top: 12px;
+            border-left: 1px solid var(--line-dark);
+            border-bottom: 1px solid var(--line-dark);
+            background:
+                linear-gradient(to right, rgba(174, 182, 191, 0.28) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(174, 182, 191, 0.28) 1px, transparent 1px);
+            background-size: 20% 25%;
+        }
+
+        .plot-area svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .plot-area::after {
+            content: none;
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: #a7b0ba;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .plot-area[data-empty="true"]::after {
+            content: "Scatter";
+        }
+
+        .axis-label {
+            position: absolute;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .axis-label.y {
+            top: 130px;
+            left: -46px;
+            transform: rotate(-90deg);
+        }
+
+        .axis-label.x {
+            right: 8px;
+            bottom: -20px;
+        }
+
+        .section {
+            margin-top: 26px;
+        }
+
+        .section-title {
+            margin-bottom: 10px;
+            color: var(--navy);
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+        }
+
+        .table-wrap.time-only-wrap {
+            width: min(720px, 100%);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 980px;
+        }
+
+        thead {
+            background: #eef1f4;
+        }
+
+        th {
+            padding: 8px 9px;
+            color: var(--navy);
+            border-bottom: 1px solid var(--line-dark);
+            font-size: 10px;
+            font-weight: 800;
+            text-align: left;
+            text-transform: uppercase;
+
+            
+        }
+
+        td {
+            padding: 8px 9px;
+            border-bottom: 1px solid var(--line);
+            color: var(--ink);
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #fafbfc;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .numeric {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .level-chip,
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 34px;
+            min-height: 22px;
+            padding: 2px 8px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            background: #fff;
+            color: var(--navy);
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .status-chip {
+            min-width: 92px;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .status-chip.online {
+            border-color: #cbd3da;
+        }
+
+        .status-chip.offline {
+            border-color: #d6b299;
+            color: var(--accent-dark);
+        }
+
+        .score {
+            color: var(--navy);
+            font-weight: 800;
+        }
+
+        .subsection-title {
+            margin-bottom: 8px;
+            color: var(--navy);
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .compact-table {
+            min-width: 840px;
+            margin-bottom: 18px;
+        }
+
+        .time-section {
+            margin-top: 28px;
+        }
+
+        .time-overview {
+            margin-top: 24px;
+            padding-top: 2px;
+        }
+
+        .stacked-area-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .stacked-chart {
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            background: #fff;
+            padding: 12px 14px 12px;
+        }
+
+        .stacked-chart-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .stacked-chart-title {
+            color: var(--navy);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .stacked-chart-meta {
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .stacked-chart svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .stacked-grid-line {
+            stroke: rgba(174, 182, 191, 0.38);
+            stroke-width: 1;
+        }
+
+        .stacked-axis-text {
+            fill: var(--muted);
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .stacked-area {
+            fill-opacity: 0.64;
+            stroke: none;
+        }
+
+        .stacked-boundary {
+            fill: none;
+            stroke-width: 2;
+            stroke-opacity: 0.7;
+        }
+
+        .stacked-legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px 14px;
+            margin-top: 4px;
+        }
+
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .legend-swatch {
+            width: 26px;
+            height: 4px;
+            border: 0;
+            border-radius: 999px;
+        }
+
+        .chart-empty {
+            padding: 36px 12px;
+            color: var(--muted);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .chart-work-message {
+            display: grid;
+            place-items: center;
+            min-height: 190px;
+            padding: 28px 18px;
+            border: 1px dashed var(--line-dark);
+            border-radius: 3px;
+            background: #f6f8fa;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .chart-work-message strong {
+            display: block;
+            color: var(--navy);
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+
+        .chart-work-message span {
+            display: block;
+            margin-top: 7px;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .time-scorecards {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .time-scorecard {
+            min-height: 74px;
+        }
+
+        .time-card-meta {
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 800;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+
+        .time-table {
+            min-width: 980px;
+            margin-bottom: 8px;
+        }
+
+        .time-table.comparison {
+            min-width: 860px;
+            table-layout: fixed;
+        }
+
+        .time-only-wrap .time-summary-table,
+        .time-only-wrap .time-table.comparison {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .time-only-wrap .time-summary-table th:first-child,
+        .time-only-wrap .time-summary-table td:first-child,
+        .time-only-wrap .time-table.comparison th:first-child,
+        .time-only-wrap .time-table.comparison td:first-child {
+            width: 38%;
+        }
+
+        .check-title {
+            margin: 8px 0 3px;
+            color: var(--navy);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .time-table .group-heading {
+            background: #dfe7ee;
+            color: var(--navy);
+            text-align: center;
+        }
+
+        .time-table .subheading {
+            background: #eef1f4;
+            text-align: center;
+        }
+
+        .time-table .time-separator {
+            width: 14px;
+            min-width: 14px;
+            padding: 0;
+            border-bottom: 0;
+            background: var(--paper);
+        }
+
+        .time-table td,
+        .time-table th {
+            white-space: nowrap;
+        }
+
+        .time-table.comparison td,
+        .time-table.comparison th {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            line-height: 1.08;
+        }
+
+        .time-table.comparison th:first-child,
+        .time-table.comparison td:first-child {
+            width: 28%;
+        }
+
+        .time-summary-table {
+            min-width: 760px;
+            margin-bottom: 4px;
+            table-layout: fixed;
+        }
+
+        .time-summary-table th,
+        .time-summary-table td {
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .time-summary-table th:first-child,
+        .time-summary-table td:first-child {
+            width: 14%;
+        }
+
+        .report-link {
+            color: var(--accent-dark);
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .report-link:hover {
+            text-decoration: underline;
+        }
+
+        .empty-state {
+            padding: 28px;
+            color: var(--muted);
+            text-align: center;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            background: var(--soft);
+        }
+
+        .page-footer {
+            margin-top: 28px;
+            padding-top: 12px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 10px;
+            text-align: right;
+        }
+
+        .pdf-report {
+            display: none;
+        }
+
+        @media (max-width: 760px) {
+            .report {
+                width: 100%;
+                padding: 18px;
+            }
+
+            .overview {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-panel {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .ranking-strip {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .time-scorecards {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .stacked-area-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metric-card {
+                grid-template-columns: 48px 1fr;
+            }
+        }
+
+        @media print {
+            @page {
+                /* 8.5" x 11" (US Letter) */
+                size: 8.5in 11in;
+                margin: 0;
+            }
+
+            html,
+            body {
+                width: 215.9mm;
+                min-height: 279.4mm;
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .report {
+                display: none !important;
+            }
+
+            .pdf-report {
+                display: block;
+                color: var(--ink);
+                background: white;
+            }
+
+            .pdf-page {
+                box-sizing: border-box;
+                width: 215.9mm;
+                height: 279.4mm;
+                padding: 5mm 6mm 6mm;
+                overflow: hidden;
+                background: var(--paper);
+                page-break-after: always;
+                break-after: page;
+            }
+
+            .pdf-time-page {
+                height: auto;
+                min-height: 279.4mm;
+                overflow: visible;
+            }
+
+            .pdf-page:last-child {
+                page-break-after: auto;
+                break-after: auto;
+            }
+
+            .pdf-header {
+                margin-bottom: 3mm;
+            }
+
+            .pdf-header-logo {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 22mm;
+                padding-bottom: 1mm;
+                border-bottom: 1.5px solid var(--line);
+                overflow: hidden;
+            }
+
+            .pdf-brand-logo {
+                display: block;
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                object-position: center;
+            }
+
+            .pdf-logo-placeholder {
+                display: grid;
+                place-items: center;
+                width: 100%;
+                height: 100%;
+                border: 1px dashed var(--line-dark);
+                color: var(--muted);
+                font-size: 8px;
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+
+            .pdf-subheader {
+                display: flex;
+                align-items: flex-end;
+                justify-content: space-between;
+                gap: 8mm;
+                padding: 2mm 0;
+                border-bottom: 1px solid var(--line);
+            }
+
+            .pdf-eyebrow {
+                margin-bottom: 1mm;
+                color: var(--muted);
+                font-size: 7px;
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+
+            .pdf-title {
+                color: var(--navy);
+                font-size: 15px;
+                font-weight: 800;
+                line-height: 1.05;
+            }
+
+            .pdf-period {
+                color: var(--ink);
+                font-size: 8px;
+                font-weight: 700;
+                text-align: right;
+                white-space: nowrap;
+            }
+
+            .pdf-overview {
+                display: grid;
+                grid-template-columns: 54mm minmax(0, 1fr);
+                gap: 4mm;
+                margin-top: 3mm;
+            }
+
+            .pdf-metrics {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1.4mm;
+            }
+
+            .pdf-metric,
+            .pdf-ranking-card {
+                border: 1px solid var(--line);
+                border-left: 2px solid var(--line-dark);
+                border-radius: 3px;
+                background: var(--soft);
+            }
+
+            .pdf-metric {
+                display: grid;
+                grid-template-columns: 12mm 1fr;
+                align-items: center;
+                min-height: 10mm;
+                padding: 1.4mm 1.8mm;
+            }
+
+            .pdf-metric.total,
+            .pdf-ranking-card.primary {
+                border-left-color: var(--navy);
+                background: #eef1f4;
+            }
+
+            .pdf-metric.level-1 { border-left-color: var(--nivel-1); }
+            .pdf-metric.level-2 { border-left-color: var(--nivel-2); }
+            .pdf-metric.level-3 { border-left-color: var(--nivel-3); }
+            .pdf-metric.level-4 { border-left-color: var(--nivel-4); }
+
+            .pdf-metric.offline {
+                border-left-color: var(--accent);
+            }
+
+            .pdf-metric-value,
+            .pdf-ranking-value {
+                color: var(--navy);
+                font-weight: 800;
+                line-height: 1;
+            }
+
+            .pdf-metric-value {
+                font-size: 15px;
+            }
+
+            .pdf-metric-label,
+            .pdf-ranking-label,
+            .pdf-time-card-meta {
+                color: var(--muted);
+                font-size: 6.4px;
+                font-weight: 800;
+                line-height: 1.1;
+                text-transform: uppercase;
+            }
+
+            .pdf-scatter-card,
+            .pdf-stacked-chart {
+                border: 1px solid var(--line);
+                border-radius: 3px;
+                background: #fbfcfd;
+            }
+
+            .pdf-scatter-card {
+                padding: 2.5mm 3mm;
+            }
+
+            .pdf-chart-title,
+            .pdf-stacked-chart-title,
+            .pdf-section-title,
+            .pdf-subsection-title,
+            .pdf-check-title {
+                color: var(--navy);
+                font-weight: 800;
+            }
+
+            .pdf-chart-title {
+                color: var(--muted);
+                font-size: 8px;
+                text-align: center;
+            }
+
+            .pdf-plot-area {
+                position: relative;
+                height: 66mm;
+                margin-top: 2mm;
+                border-left: 1px solid var(--line-dark);
+                border-bottom: 1px solid var(--line-dark);
+                background:
+                    linear-gradient(to right, rgba(174, 182, 191, 0.28) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(174, 182, 191, 0.28) 1px, transparent 1px);
+                background-size: 20% 25%;
+            }
+
+            .pdf-plot-area svg {
+                width: 100%;
+                height: 100%;
+                display: block;
+            }
+
+            .pdf-plot-area::after {
+                content: none;
+                position: absolute;
+                inset: 0;
+                display: grid;
+                place-items: center;
+                color: #a7b0ba;
+                font-size: 15px;
+                font-weight: 800;
+            }
+
+            .pdf-plot-area[data-empty="true"]::after {
+                content: "Scatter";
+            }
+
+            .pdf-ranking-strip,
+            .pdf-time-scorecards {
+                display: grid;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 2mm;
+                margin-top: 3mm;
+            }
+
+            .pdf-ranking-card {
+                min-height: 11mm;
+                padding: 1.7mm 2mm;
+            }
+
+            .pdf-ranking-value {
+                font-size: 12px;
+            }
+
+            .pdf-ranking-label {
+                margin-top: 1.3mm;
+            }
+
+            .pdf-section {
+                margin-top: 3mm;
+            }
+
+            .pdf-section-title {
+                margin-bottom: 1.5mm;
+                font-size: 9px;
+            }
+
+            .pdf-table-wrap {
+                overflow: hidden;
+                border: 1px solid var(--line);
+                border-radius: 3px;
+                margin-inline: 1mm;
+            }
+
+            .pdf-stores-wrap {
+                max-height: 100mm;
+            }
+
+            .pdf-table {
+                width: 100%;
+                min-width: 0;
+                border-collapse: collapse;
+                table-layout: fixed;
+            }
+
+            .pdf-table thead {
+                background: #eef1f4;
+            }
+
+            /* TD: allow word wrap en celdas de datos pero sin romper a media palabra */
+            .pdf-table th,
+            .pdf-table td {
+                padding: 1.1mm 0.6mm;
+                border-bottom: 1px solid var(--line);
+                font-size: 10.5px;
+                line-height: 1.25;
+                vertical-align: middle;
+                overflow-wrap: break-word;
+                word-break: normal;
+            }
+
+            /* TH: nunca romper palabras a media sílaba */
+            .pdf-table th {
+                color: var(--navy);
+                font-size: 9px;
+                font-weight: 800;
+                text-transform: uppercase;
+                text-align: center;
+                white-space: normal;
+                line-height: 1.3;
+                word-break: keep-all;
+                overflow-wrap: normal;
+            }
+
+            .pdf-table th.col-store {
+                text-align: left;
+            }
+
+            .pdf-table tbody tr:nth-child(even) {
+                background: #fafbfc;
+            }
+
+            .pdf-table tbody tr:last-child td {
+                border-bottom: 0;
+            }
+
+            /* Anchos explícitos para las 10 columnas — suman 100% */
+            .pdf-stores-table .col-store       { width: 22%; }
+            .pdf-stores-table .col-level       { width: 5%;  }
+            .pdf-stores-table .col-service     { width: 8%;  }
+            .pdf-stores-table .col-appearance  { width: 10%; }
+            .pdf-stores-table .col-prep        { width: 13%; }
+            .pdf-stores-table .col-proc        { width: 6%;  }
+            .pdf-stores-table .col-score       { width: 10%; }
+            .pdf-stores-table .col-status      { width: 7%;  }
+            .pdf-stores-table .col-link        { width: 7%;  }
+            .pdf-stores-table .col-cashier     { width: 8%;  }
+
+            .pdf-chip {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 17px;
+                min-height: 14px;
+                padding: 1px 4px;
+                border: 1px solid var(--line);
+                border-radius: 3px;
+                background: white;
+                color: var(--navy);
+                font-size: 9px;
+                font-weight: 800;
+            }
+
+            .pdf-chip.status {
+                min-width: 38px;
+                color: var(--muted);
+            }
+
+            .pdf-chip.offline {
+                border-color: #d6b299;
+                color: var(--accent-dark);
+            }
+
+            .pdf-link {
+                color: var(--accent-dark);
+                font-size: 10.5px;
+                font-weight: 800;
+                text-decoration: none;
+            }
+
+            .pdf-time-scorecards {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                margin-top: 2mm;
+            }
+
+            .pdf-time-card-meta {
+                margin-top: 1mm;
+            }
+
+            .pdf-stacked-area-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 2.5mm;
+            }
+
+            .pdf-stacked-chart {
+                padding: 1.5mm 2mm;
+                background: white;
+            }
+
+            .pdf-stacked-chart-header {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 2mm;
+                margin-bottom: 0.5mm;
+            }
+
+            .pdf-stacked-chart-title {
+                font-size: 7px;
+                text-transform: uppercase;
+            }
+
+            .pdf-stacked-chart-meta {
+                color: var(--muted);
+                font-size: 5.8px;
+                font-weight: 700;
+            }
+
+            .pdf-stacked-chart svg {
+                display: block;
+                width: 100%;
+                height: 35mm;
+            }
+
+            .pdf-chart-work-message {
+                min-height: 35mm;
+                padding: 7mm 4mm;
+            }
+
+            .pdf-chart-work-message strong {
+                font-size: 8px;
+            }
+
+            .pdf-chart-work-message span {
+                margin-top: 1.2mm;
+                font-size: 6.4px;
+            }
+
+            .pdf-stacked-legend {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 1mm 3mm;
+                margin-top: 0.5mm;
+            }
+
+            .pdf-legend-item {
+                display: inline-flex;
+                align-items: center;
+                gap: 1mm;
+                color: var(--muted);
+                font-size: 5.8px;
+                font-weight: 700;
+            }
+
+            .pdf-legend-swatch {
+                width: 8mm;
+                height: 1mm;
+                border-radius: 999px;
+            }
+
+            .pdf-time-comparison-grid {
+                display: block;
+                margin-top: 1.5mm;
+            }
+
+            .pdf-time-comparison-section {
+                width: 100%;
+                max-width: 184mm;
+                margin-right: auto;
+                margin-left: auto;
+            }
+
+            .pdf-subsection-title {
+                margin-bottom: 0.6mm;
+                font-size: 8px;
+            }
+
+            .pdf-check-title {
+                margin-bottom: 0.5mm;
+                font-size: 7px;
+                text-transform: uppercase;
+            }
+
+            .pdf-comparison-panel {
+                min-width: 0;
+            }
+
+            .pdf-comparison-panel + .pdf-comparison-panel {
+                margin-top: 2mm;
+            }
+
+            .pdf-comparison-wrap {
+                max-height: none;
+                overflow: visible;
+            }
+
+            .pdf-comparison-wrap.time-only-wrap {
+                width: 132mm;
+                max-width: 132mm;
+            }
+
+            .pdf-comparison-wrap.time-only-wrap .pdf-time-table {
+                width: 100%;
+            }
+
+            .pdf-comparison-wrap.time-only-wrap .pdf-time-table th:first-child,
+            .pdf-comparison-wrap.time-only-wrap .pdf-time-table td:first-child {
+                width: 38%;
+            }
+
+            .pdf-time-summary-table {
+                margin-bottom: 0.45mm;
+            }
+
+            .pdf-time-table thead {
+                display: table-header-group;
+            }
+
+            .pdf-time-table tr {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            .pdf-time-table th,
+            .pdf-time-table td {
+                padding: 0.38mm 0.55mm;
+                font-size: 8.2px;
+                line-height: 1;
+            }
+
+            .pdf-time-table th {
+                font-size: 7.6px;
+            }
+
+            .pdf-empty-state {
+                padding: 6mm;
+                color: var(--muted);
+                font-size: 8px;
+                text-align: center;
+                border: 1px solid var(--line);
+                border-radius: 3px;
+                background: var(--soft);
+            }
+
+            .pdf-footer {
+                margin-top: 2mm;
+                padding-top: 1.5mm;
+                border-top: 1px solid var(--line);
+                color: var(--muted);
+                font-size: 6px;
+                text-align: right;
+            }
+
+            .table-wrap {
+                overflow: visible;
+            }
+
+            .report-actions {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <%
+        const sortTableNumber = (value) => {
+            if (value === null || value === undefined || value === '' || value === 'N/A') return -Infinity;
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : -Infinity;
+        };
+        const tableStores = (Array.isArray(all_stores) ? [...all_stores] : []).sort((a, b) => {
+            const aOffline = a?.is_out_of_line === true || a?.has_report === false;
+            const bOffline = b?.is_out_of_line === true || b?.has_report === false;
+            if (aOffline !== bOffline) return aOffline ? 1 : -1;
+            const levelDiff = sortTableNumber(b?.nivel) - sortTableNumber(a?.nivel);
+            if (levelDiff !== 0) return levelDiff;
+            const scoreDiff = sortTableNumber(b?.puntuacion ?? b?.score) - sortTableNumber(a?.puntuacion ?? a?.score);
+            if (scoreDiff !== 0) return scoreDiff;
+            return String(a?.location || '').localeCompare(String(b?.location || ''), 'es');
+        });
+    %>
+    <%
+        const reportEntityLabel = district.entity_label || (district.report_type === 'zone' ? 'Zona' : 'Distrito');
+        const reportEntityPlural = district.entity_label_plural || (district.report_type === 'zone' ? 'Zonas' : 'Distritos');
+        const reportEyebrow = district.report_eyebrow || (district.report_type === 'zone' ? 'Reporte por zona' : 'Reporte ejecutivo de distrito');
+        const storeChanges = store_changes && typeof store_changes === 'object' ? store_changes : {};
+
+        const toNumber = (value) => {
+            if (value === null || value === undefined || value === '') return null;
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        };
+
+        const truncateLabel = (value, maxLen = 16) => {
+            const text = String(value || '').trim();
+            if (!text) return '';
+            if (text.length <= maxLen) return text;
+            return `${text.slice(0, Math.max(0, maxLen - 1))}…`;
+        };
+
+        const WEIGHTS = {
+            apariencia: 0.10,
+            preparaciones: 0.40,
+            proc_gen: 0.20,
+        };
+
+        const weightedScore = (row, weights) => {
+            const keys = Object.keys(weights);
+            const pairs = keys
+                .map((key) => {
+                    const value = toNumber(row?.[key]);
+                    const weight = Number(weights[key] || 0);
+                    if (!Number.isFinite(value) || !Number.isFinite(weight) || weight <= 0) return null;
+                    return { value, weight };
+                })
+                .filter(Boolean);
+
+            if (pairs.length === 0) return null;
+            const total = pairs.reduce((acc, p) => acc + p.weight, 0);
+            if (!total) return null;
+
+            const sum = pairs.reduce((acc, p) => acc + p.value * p.weight, 0);
+            // Normaliza a escala 0-100 usando la suma de pesos configurada.
+            return sum / total;
+        };
+
+        const buildScatter = (stores) => {
+            const points = (Array.isArray(stores) ? stores : [])
+                .filter((store) => store?.has_report)
+                .map((store) => {
+                    // X = Operaciones (ponderado), Y = Servicio al cliente.
+                    const x = weightedScore(store, WEIGHTS);
+                    const y = toNumber(store?.servicio);
+                    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+                    return {
+                        location_id: store?.location_id,
+                        store: String(store?.location || '').trim(),
+                        x,
+                        y,
+                        nivel: store?.nivel ?? 'N/A',
+                    };
+                })
+                .filter(Boolean);
+
+            // Escala fija 0-100 para cuadrantes consistentes.
+            const domain = { min: 0, max: 100 };
+
+            return { points, domain };
+        };
+
+        const scatter = buildScatter(tableStores);
+
+        const scatterViewBox = { width: 760, height: 360 };
+        const scatterMargin = { top: 18, right: 20, bottom: 34, left: 82 };
+        const scatterPlot = {
+            x: scatterMargin.left,
+            y: scatterMargin.top,
+            width: scatterViewBox.width - scatterMargin.left - scatterMargin.right,
+            height: scatterViewBox.height - scatterMargin.top - scatterMargin.bottom,
+        };
+
+        const scaleLinear = (value, inMin, inMax, outMin, outMax) => {
+            if (!Number.isFinite(value)) return outMin;
+            if (inMax === inMin) return outMin;
+            const t = (value - inMin) / (inMax - inMin);
+            return outMin + t * (outMax - outMin);
+        };
+
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+        const tickValues = [0, 20, 40, 60, 80, 100];
+
+        const LEVEL_COLORS = {
+            1: '#2563eb',
+            2: '#7c3aed',
+            3: '#0d9488',
+            4: '#f59e0b',
+            other: '#aeb6bf',
+        };
+
+        const CHANGE_COLORS = {
+            up: '#2f6f4e',
+            down: '#b33a32',
+            alert: '#c45b18',
+            same: null,
+        };
+
+        const changeSuffix = (change) => {
+            if (change === 'up') return ' (Sube nivel)';
+            if (change === 'down') return ' (Baja nivel)';
+            if (change === 'alert') return ' (Alerta de descenso)';
+            return '';
+        };
+
+        const layoutScatterLabels = (points) => {
+            const leftX = scatterPlot.x + 6;
+            const labelMinGap = 14;
+            const top = scatterPlot.y + 10;
+            const bottom = scatterPlot.y + scatterPlot.height - 6;
+
+            const items = points.map((p) => {
+                const cx = clamp(
+                    scaleLinear(p.x, scatter.domain.min, scatter.domain.max, scatterPlot.x, scatterPlot.x + scatterPlot.width),
+                    scatterPlot.x,
+                    scatterPlot.x + scatterPlot.width
+                );
+                const cy = clamp(
+                    scaleLinear(p.y, scatter.domain.min, scatter.domain.max, scatterPlot.y + scatterPlot.height, scatterPlot.y),
+                    scatterPlot.y,
+                    scatterPlot.y + scatterPlot.height
+                );
+                const overrideChange = storeChanges[p.location_id];
+                const overrideColor = CHANGE_COLORS[overrideChange];
+                const fill = overrideColor || (p.nivel === 1 || p.nivel === '1' ? LEVEL_COLORS[1]
+                    : p.nivel === 2 || p.nivel === '2' ? LEVEL_COLORS[2]
+                    : p.nivel === 3 || p.nivel === '3' ? LEVEL_COLORS[3]
+                    : p.nivel === 4 || p.nivel === '4' ? LEVEL_COLORS[4]
+                    : LEVEL_COLORS.other);
+
+                return {
+                    ...p,
+                    cx,
+                    cy,
+                    labelX: leftX,
+                    desiredLabelY: cy,
+                    label: truncateLabel(`${p.store}${changeSuffix(overrideChange)}`, 28),
+                    fill,
+                    override_change: overrideChange || null,
+                };
+            });
+
+            items.sort((a, b) => a.desiredLabelY - b.desiredLabelY);
+
+            // Primera pasada: asigna posiciones con separación mínima sin clampear,
+            // para que puntos en el mismo (x,y) no queden encimados al llegar al borde.
+            let prev = top - labelMinGap;
+            items.forEach((item) => {
+                const next = Math.max(item.desiredLabelY, prev + labelMinGap);
+                item.labelY = next;
+                prev = item.labelY;
+            });
+
+            // Si nos pasamos del fondo, empuja hacia arriba manteniendo separación.
+            const overflow = prev - bottom;
+            if (overflow > 0) {
+                for (let i = items.length - 1; i >= 0; i--) {
+                    const item = items[i];
+                    const next = (i === items.length - 1)
+                        ? item.labelY - overflow
+                        : Math.min(item.labelY - overflow, items[i + 1].labelY - labelMinGap);
+                    item.labelY = next;
+                }
+            }
+
+            // Clamp final después de aplicar todas las correcciones.
+            items.forEach((item) => {
+                item.labelY = clamp(item.labelY, top, bottom);
+            });
+
+            return items;
+        };
+
+        const scatterLayout = layoutScatterLabels(scatter.points);
+    %>
+    <% const pdfUrl = district.report_type === 'zone'
+        ? `/api/zone-report/pdf?zone_name=${encodeURIComponent(district.name)}&d1=${encodeURIComponent(district.date_range.start)}&d2=${encodeURIComponent(district.date_range.end)}`
+        : `/api/report/pdf?district_name=${encodeURIComponent(district.name)}&d1=${encodeURIComponent(district.date_range.start)}&d2=${encodeURIComponent(district.date_range.end)}`; %>
+    <main class="report">
+        <header class="report-header">
+            <% if (logoExists && logoBase64) { %>
+                <img src="data:<%= logoMimeType %>;base64,<%= logoBase64 %>" alt="Logo de la compania" class="brand-logo">
+            <% } else { %>
+                <div class="logo-placeholder">Logo</div>
+            <% } %>
+        </header>
+
+        <section class="report-subheader">
+            <div class="eyebrow"><%= reportEyebrow %></div>
+            <h1><%= reportEntityLabel %>: <%= district.name %></h1>
+            <div class="period">
+                <strong>Periodo:</strong> <%= district.date_range.label %>
+            </div>
+            <div class="report-actions">
+                <a href="<%= pdfUrl %>" class="download-link">Descargar PDF</a>
+            </div>
+        </section>
+
+        <section class="overview">
+            <aside class="metrics-panel" aria-label="Resumen de <%= reportEntityLabel.toLowerCase() %>">
+                <div class="metric-card total">
+                    <div class="metric-value"><%= district.total_stores %></div>
+                    <div class="metric-label">Total de Tiendas</div>
+                </div>
+                <div class="metric-card level-1">
+                    <div class="metric-value"><%= district.level_breakdown.nivel_1 %></div>
+                    <div class="metric-label">Nivel 1</div>
+                </div>
+                <div class="metric-card level-2">
+                    <div class="metric-value"><%= district.level_breakdown.nivel_2 %></div>
+                    <div class="metric-label">Nivel 2</div>
+                </div>
+                <div class="metric-card level-3">
+                    <div class="metric-value"><%= district.level_breakdown.nivel_3 %></div>
+                    <div class="metric-label">Nivel 3</div>
+                </div>
+                <div class="metric-card level-4">
+                    <div class="metric-value"><%= district.level_breakdown.nivel_4 %></div>
+                    <div class="metric-label">Nivel 4</div>
+                </div>
+                <div class="metric-card offline out-of-line">
+                    <div class="metric-value"><%= district.level_breakdown.out_of_line %></div>
+                    <div class="metric-label">Fuera de L&iacute;nea</div>
+                </div>
+            </aside>
+
+            <div class="scatter-card">
+                <div class="chart-title">Servicio al cliente vs Operaciones</div>
+                <div class="plot-area" aria-label="Scatter Servicio vs Operaciones" <%= scatter.points.length ? '' : 'data-empty=\"true\"' %>>
+                    <div class="axis-label y">Servicio al cliente</div>
+                    <div class="axis-label x">Operaciones</div>
+                    <% if (scatter.points.length > 0) { %>
+                        <svg viewBox="0 0 <%= scatterViewBox.width %> <%= scatterViewBox.height %>" role="img" aria-label="Scatter Servicio al cliente vs Operaciones">
+                            <rect x="<%= scatterPlot.x %>" y="<%= scatterPlot.y %>" width="<%= scatterPlot.width %>" height="<%= scatterPlot.height %>" fill="#ffffff"></rect>
+
+                            <% tickValues.forEach((tick) => { %>
+                                <%
+                                    const tx = Math.round(scaleLinear(tick, scatter.domain.min, scatter.domain.max, scatterPlot.x, scatterPlot.x + scatterPlot.width) * 100) / 100;
+                                    const ty = Math.round(scaleLinear(tick, scatter.domain.min, scatter.domain.max, scatterPlot.y + scatterPlot.height, scatterPlot.y) * 100) / 100;
+                                %>
+                                <line x1="<%= tx %>" y1="<%= scatterPlot.y %>" x2="<%= tx %>" y2="<%= scatterPlot.y + scatterPlot.height %>" stroke="rgba(174, 182, 191, 0.45)" stroke-width="1" />
+                                <line x1="<%= scatterPlot.x %>" y1="<%= ty %>" x2="<%= scatterPlot.x + scatterPlot.width %>" y2="<%= ty %>" stroke="rgba(174, 182, 191, 0.45)" stroke-width="1" />
+                                <text x="<%= tx %>" y="<%= scatterPlot.y + scatterPlot.height + 16 %>" text-anchor="middle" font-size="10" font-weight="700" fill="#5f6b76"><%= tick %></text>
+                                <text x="<%= scatterPlot.x - 8 %>" y="<%= ty + 3 %>" text-anchor="end" font-size="10" font-weight="700" fill="#5f6b76"><%= tick %></text>
+                            <% }); %>
+
+                            <line x1="<%= scatterPlot.x %>" y1="<%= scatterPlot.y + scatterPlot.height %>" x2="<%= scatterPlot.x + scatterPlot.width %>" y2="<%= scatterPlot.y + scatterPlot.height %>" stroke="#aeb6bf" stroke-width="1" />
+                            <line x1="<%= scatterPlot.x %>" y1="<%= scatterPlot.y %>" x2="<%= scatterPlot.x %>" y2="<%= scatterPlot.y + scatterPlot.height %>" stroke="#aeb6bf" stroke-width="1" />
+
+                            <% scatterLayout.forEach((p) => { %>
+                                <%
+                                    const x1 = p.labelX + 2;
+                                    const y1 = p.labelY;
+                                    const x2 = p.cx - 5;
+                                    const y2 = p.cy;
+                                %>
+                                <line x1="<%= x1 %>" y1="<%= y1 %>" x2="<%= x2 %>" y2="<%= y2 %>" stroke="rgba(36, 49, 66, 0.22)" stroke-width="1" />
+                                <circle data-location-id="<%= p.location_id %>" cx="<%= p.cx %>" cy="<%= p.cy %>" r="6.2" fill="<%= p.fill %>" opacity="0.9">
+                                    <title><%= p.store %> (Operaciones: <%= Math.round(p.x * 10) / 10 %>, Servicio: <%= Math.round(p.y * 10) / 10 %>)</title>
+                                </circle>
+                                <text data-location-id="<%= p.location_id %>" x="<%= p.labelX %>" y="<%= p.labelY + 3 %>" font-size="10" font-weight="700" fill="#243142">
+                                    <%= p.label %>
+                                </text>
+                            <% }); %>
+                        </svg>
+                    <% } %>
+                </div>
+            </div>
+        </section>
+
+        <% const regionalSummary = district.regional_summary || {}; %>
+        <% const districtTimeReport = time_checks && time_checks.district_report; %>
+        <% const zoneTimeReport = time_checks && time_checks.zone_report; %>
+        <% const isZoneReport = district.report_type === 'zone'; %>
+        <section class="ranking-strip" aria-label="Promedios y rankings">
+            <% if (isZoneReport) { %>
+                <div class="ranking-card primary">
+                    <div class="ranking-value"><%= regionalSummary.nivel_promedio ?? 'N/A' %></div>
+                    <div class="ranking-label">Nivel Promedio</div>
+                </div>
+                <div class="ranking-card">
+                    <div class="ranking-value"><%= regionalSummary.zonal_rank_label || 'N/A' %></div>
+                    <div class="ranking-label">Ranking Zonal</div>
+                </div>
+            <% } else { %>
+                <div class="ranking-card primary">
+                    <div class="ranking-value"><%= regionalSummary.nivel_promedio ?? 'N/A' %></div>
+                    <div class="ranking-label">Nivel Promedio</div>
+                </div>
+                <div class="ranking-card">
+                    <div class="ranking-value"><%= regionalSummary.country_average ?? 'N/A' %></div>
+                    <div class="ranking-label">Promedio M&eacute;xico</div>
+                </div>
+                <div class="ranking-card">
+                    <div class="ranking-value"><%= regionalSummary.country_rank_label || 'N/A' %></div>
+                    <div class="ranking-label">Ranking M&eacute;xico</div>
+                </div>
+                <div class="ranking-card">
+                    <div class="ranking-value"><%= regionalSummary.regional_average ?? 'N/A' %></div>
+                    <div class="ranking-label">Promedio Regional</div>
+                </div>
+                <div class="ranking-card">
+                    <div class="ranking-value"><%= regionalSummary.regional_rank_label || 'N/A' %></div>
+                    <div class="ranking-label">Ranking Regional</div>
+                </div>
+            <% } %>
+        </section>
+
+        <section class="section">
+            <% if (tableStores.length > 0) { %>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tienda</th>
+                                <th class="center">Nivel</th>
+                                <th class="center">Servicio</th>
+                                <th class="center">Apariencia</th>
+                                <th class="center">Preparacion</th>
+                                <th class="center">Procesox<br>Gen</th>
+                                <th class="center">Puntuaci&oacute;n</th>
+                                <th class="center">Estado</th>
+                                <th class="center">Informe</th>
+                                <th class="center">Detalle<br>Cajeros</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% tableStores.forEach((store) => { %>
+                                <tr>
+                                    <td><strong><%= store.location %></strong></td>
+                                    <td class="center">
+                                        <% if (store.nivel !== 'N/A') { %>
+                                            <span class="level-chip"><%= store.nivel %></span>
+                                        <% } else { %>
+                                            <span style="color: var(--muted);">&mdash;</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="numeric"><%= store.servicio %></td>
+                                    <td class="numeric"><%= store.apariencia %></td>
+                                    <td class="numeric"><%= store.preparaciones %></td>
+                                    <td class="numeric"><%= store.proc_gen %></td>
+                                    <td class="numeric">
+                                        <% if (store.puntuacion !== 'N/A') { %>
+                                            <span class="score"><%= store.puntuacion %></span>
+                                        <% } else { %>
+                                            <span style="color: var(--muted);">N/A</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="center">
+                                        <% if (store.has_report) { %>
+                                            <span class="status-chip online">En l&iacute;nea</span>
+                                        <% } else { %>
+                                            <span class="status-chip offline">Fuera de l&iacute;nea</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="center">
+                                        <% if (store.has_report && store.informe_url) { %>
+                                            <a href="<%= store.informe_url %>" target="_blank" class="report-link">Ver</a>
+                                        <% } else { %>
+                                            <span style="color: var(--muted);">&mdash;</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="center">
+                                        <% if (store.has_report && store.cashier_report_url) { %>
+                                            <a href="<%= store.cashier_report_url %>" target="_blank" class="report-link" title="<%= store.cashier_report_name %>">Ver</a>
+                                        <% } else { %>
+                                            <span style="color: var(--muted);">&mdash;</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="empty-state">No hay tiendas para <%= reportEntityLabel.toLowerCase() %> y periodo seleccionados.</div>
+            <% } %>
+        </section>
+
+        <% if (zoneTimeReport && Array.isArray(zoneTimeReport.checks) && zoneTimeReport.checks.length > 0) { %>
+            <%
+                const zoneDashIfEmpty = (value) => (value === 'N/A' || value === null || value === undefined || value === '' ? '-' : value);
+            %>
+            <section class="section time-section">
+                <div class="subsection-title">Tabla Comparativa de Locaciones de <%= zoneTimeReport.zone_name || district.name %></div>
+                <% zoneTimeReport.checks.forEach((check) => { %>
+                    <div class="check-title"><%= check.title %></div>
+                    <div class="table-wrap <%= check.mode === 'time_only' ? 'time-only-wrap' : '' %>">
+                        <table class="time-summary-table <%= check.mode === 'time_only' ? 'time-only-table' : '' %>">
+                            <thead>
+                                <tr>
+                                    <th><%= reportEntityLabel %></th>
+                                    <th class="numeric">Tiempo Promedio</th>
+                                    <th class="numeric">Dif seg Semana Ant.</th>
+                                    <% if (check.mode !== 'time_only') { %>
+                                        <th class="numeric">% Trans &lt; 1:00min</th>
+                                        <th class="numeric">Desempe&ntilde;o Semana Ant.</th>
+                                    <% } %>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% check.zones.forEach((row) => { %>
+                                    <tr>
+                                        <td><strong><%= row.label %></strong></td>
+                                        <td class="numeric"><%= zoneDashIfEmpty(row.avg_label) %></td>
+                                        <td class="numeric"><%= zoneDashIfEmpty(row.diff_seconds_previous_label) %></td>
+                                        <% if (check.mode !== 'time_only') { %>
+                                            <td class="numeric"><%= zoneDashIfEmpty(row.less_than_60_label) %></td>
+                                            <td class="numeric"><%= zoneDashIfEmpty(row.performance_previous_label) %></td>
+                                        <% } %>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                        <table class="time-table comparison <%= check.mode === 'time_only' ? 'time-only-table' : '' %>">
+                            <thead>
+                                <tr>
+                                    <th>Locaci&oacute;n</th>
+                                    <th class="numeric">AVG</th>
+                                    <th class="numeric">Dif AVG</th>
+                                    <th class="numeric">Dif Sem.</th>
+                                    <% if (check.mode !== 'time_only') { %>
+                                        <th class="numeric">% Obj.</th>
+                                        <th class="numeric">Dif %</th>
+                                        <th class="numeric">Desemp.</th>
+                                    <% } %>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% check.locations.forEach((row) => { %>
+                                    <tr>
+                                        <td><strong><%= row.location %></strong></td>
+                                        <td class="numeric"><%= zoneDashIfEmpty(row.avg_label) %></td>
+                                        <td class="numeric"><%= zoneDashIfEmpty(row.diff_seconds_average_label) %></td>
+                                        <td class="numeric"><%= zoneDashIfEmpty(row.diff_seconds_previous_label) %></td>
+                                        <% if (check.mode !== 'time_only') { %>
+                                            <td class="numeric"><%= zoneDashIfEmpty(row.less_than_60_label) %></td>
+                                            <td class="numeric"><%= zoneDashIfEmpty(row.diff_percent_zone_label) %></td>
+                                            <td class="numeric"><%= zoneDashIfEmpty(row.performance_previous_label) %></td>
+                                        <% } %>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% }); %>
+            </section>
+        <% } %>
+
+        <% const timeOverview = districtTimeReport && districtTimeReport.overview; %>
+        <% if (timeOverview && timeOverview.sections && timeOverview.sections.length > 0) { %>
+            <section class="time-overview" aria-label="Resumen de tiempos promedio y ranking">
+                <div class="section-title">Tiempos promedio y ranking</div>
+                <div class="time-scorecards">
+                    <% timeOverview.sections.forEach((section) => { %>
+                        <%
+                            const isMexicoScope = String(section.scope || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() === 'mexico';
+                            const timeScopeLabel = isMexicoScope ? 'M&eacute;xico' : 'Regional';
+                            const timeRankLabel = isMexicoScope ? 'Ranking M&eacute;xico' : 'Ranking Regional';
+                        %>
+                        <% section.rows.forEach((row) => { %>
+                            <div class="ranking-card time-scorecard">
+                                <div class="ranking-value"><%= row.avg_label %></div>
+                                <div class="ranking-label"><%- timeScopeLabel %> <%= String(row.label || '').replace(':', '') %></div>
+                                <div class="time-card-meta"><%- timeRankLabel %> <%= row.rank_label %></div>
+                            </div>
+                        <% }); %>
+                    <% }); %>
+                </div>
+            </section>
+        <% } %>
+
+        <% const distributionCharts = districtTimeReport && Array.isArray(districtTimeReport.distribution_charts) ? districtTimeReport.distribution_charts : []; %>
+        <% if (distributionCharts.length > 0) { %>
+            <section class="section" aria-label="Distribucion historica por rangos">
+                <div class="section-title">Distribuci&oacute;n hist&oacute;rica por rangos</div>
+                <div class="stacked-area-grid">
+                    <% distributionCharts.forEach((chart) => { %>
+                        <div class="stacked-chart">
+                            <div class="stacked-chart-header">
+                                <div class="stacked-chart-title"><%= chart.title %></div>
+                                <div class="stacked-chart-meta">Porcentaje de tiendas por rango</div>
+                            </div>
+                            <div class="chart-work-message" role="status" aria-label="Grafico de tiempos en desarrollo">
+                                <div>
+                                    <strong>En Construcci&oacute;n</strong>
+                                    <span>Visualizaci&oacute;n hist&oacute;rica de tiempos en desarrollo.</span>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </section>
+        <% } %>
+
+        <% if (districtTimeReport && districtTimeReport.store_rows && districtTimeReport.store_rows.length > 0) { %>
+            <%
+                const comparisonRows = Array.isArray(districtTimeReport.store_rows) ? districtTimeReport.store_rows : [];
+                const sortComparisonRows = (checkKey) => [...comparisonRows]
+                    .filter((row) => row[checkKey] && row[checkKey].is_applicable !== false)
+                    .sort((a, b) => {
+                    const aValue = a[checkKey] && a[checkKey].avg_seconds;
+                    const bValue = b[checkKey] && b[checkKey].avg_seconds;
+                    const aHasValue = Number.isFinite(aValue);
+                    const bHasValue = Number.isFinite(bValue);
+
+                    if (aHasValue && bHasValue && aValue !== bValue) {
+                        return aValue - bValue;
+                    }
+
+                    if (aHasValue !== bHasValue) {
+                        return aHasValue ? -1 : 1;
+                    }
+
+                    return String(a.store || '').localeCompare(String(b.store || ''), 'es');
+                });
+                const lobbyComparisonRows = sortComparisonRows('lobby');
+                const driveComparisonRows = sortComparisonRows('drive');
+                const dashIfEmpty = (value) => (value === 'N/A' || value === null || value === undefined || value === '' ? '-' : value);
+            %>
+            <section class="section time-section">
+                <div class="subsection-title">Tabla Comparativa de Tiendas del Distrito <%= districtTimeReport.district_number || '' %></div>
+                <div class="check-title">Lobby</div>
+                <div class="table-wrap">
+                    <table class="time-summary-table">
+                        <thead>
+                            <tr>
+                                <th>Distrito</th>
+                                <th class="numeric">Tiempo Promedio</th>
+                                <th class="numeric">Dif seg sobre Semana Anterior</th>
+                                <th class="numeric">% Transacciones Menores a 1:00min</th>
+                                <th class="numeric">Desempe&ntilde;o sobre Semana Anterior</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong><%= districtTimeReport.general.lobby.label %></strong></td>
+                                <td class="numeric"><%= dashIfEmpty(districtTimeReport.general.lobby.avg_label) %></td>
+                                <td class="numeric"><%= dashIfEmpty(districtTimeReport.general.lobby.diff_seconds_previous_label) %></td>
+                                <td class="numeric"><%= dashIfEmpty(districtTimeReport.general.lobby.less_than_60_label) %></td>
+                                <td class="numeric"><%= dashIfEmpty(districtTimeReport.general.lobby.performance_previous_label) %></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table class="time-table comparison">
+                        <thead>
+                            <tr>
+                                <th>Locaci&oacute;n</th>
+                                <th class="numeric">Tiempo AVG</th>
+                                <th class="numeric">Dif seg sobre AVG</th>
+                                <th class="numeric">Dif seg sobre Semana Anterior</th>
+                                <th class="numeric">% Objetivo</th>
+                                <th class="numeric">Dif %</th>
+                                <th class="numeric">Desempe&ntilde;o sobre Semana Anterior</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% lobbyComparisonRows.forEach((row) => { %>
+                                <tr>
+                                    <td><strong><%= row.store %></strong></td>
+                                    <td class="numeric"><%= dashIfEmpty(row.lobby.avg_label) %></td>
+                                    <td class="numeric"><%= dashIfEmpty(row.lobby.diff_seconds_average_label) %></td>
+                                    <td class="numeric"><%= dashIfEmpty(row.lobby.diff_seconds_previous_label) %></td>
+                                    <td class="numeric"><%= dashIfEmpty(row.lobby.less_than_60_label) %></td>
+                                    <td class="numeric"><%= dashIfEmpty(row.lobby.diff_percent_district_label) %></td>
+                                    <td class="numeric"><%= dashIfEmpty(row.lobby.performance_previous_label) %></td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="check-title">Drive</div>
+                <div class="table-wrap">
+                    <table class="time-summary-table">
+                        <thead>
+                            <tr>
+                                <th>Distrito</th>
+                                <th class="numeric">Tiempo Promedio</th>
+                                <th class="numeric">Dif seg sobre Semana Anterior</th>
+                                <th class="numeric">% Transacciones Menores a 1:00min</th>
+                                <th class="numeric">Desempe&ntilde;o sobre Semana Anterior</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong><%= districtTimeReport.general.drive.label %></strong></td>
+                                <td class="numeric"><%= dashIfEmpty(districtTimeReport.general.drive.avg_label) %></td>
+                                <td class="numeric"><%= dashIfEmpty(districtTimeReport.general.drive.diff_seconds_previous_label) %></td>
+                                <td class="numeric"><%= dashIfEmpty(districtTimeReport.general.drive.less_than_60_label) %></td>
+                                <td class="numeric"><%= dashIfEmpty(districtTimeReport.general.drive.performance_previous_label) %></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table class="time-table comparison">
+                        <thead>
+                            <tr>
+                                <th>Locaci&oacute;n</th>
+                                <th class="numeric">Tiempo AVG</th>
+                                <th class="numeric">Dif seg sobre AVG</th>
+                                <th class="numeric">Dif seg sobre Semana Anterior</th>
+                                <th class="numeric">% Objetivo</th>
+                                <th class="numeric">Dif %</th>
+                                <th class="numeric">Desempe&ntilde;o sobre Semana Anterior</th>
+                            </tr>
+                        </thead>
+                        <% if (driveComparisonRows.length > 0) { %>
+                            <tbody>
+                                <% driveComparisonRows.forEach((row) => { %>
+                                    <tr>
+                                        <td><strong><%= row.store %></strong></td>
+                                        <td class="numeric"><%= dashIfEmpty(row.drive.avg_label) %></td>
+                                        <td class="numeric"><%= dashIfEmpty(row.drive.diff_seconds_average_label) %></td>
+                                        <td class="numeric"><%= dashIfEmpty(row.drive.diff_seconds_previous_label) %></td>
+                                        <td class="numeric"><%= dashIfEmpty(row.drive.less_than_60_label) %></td>
+                                        <td class="numeric"><%= dashIfEmpty(row.drive.diff_percent_district_label) %></td>
+                                        <td class="numeric"><%= dashIfEmpty(row.drive.performance_previous_label) %></td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        <% } else { %>
+                            <tbody>
+                                <tr>
+                                    <td colspan="7" class="center" style="color: var(--muted);">Este distrito no tiene tiendas que generen Drive.</td>
+                                </tr>
+                            </tbody>
+                        <% } %>
+                    </table>
+                </div>
+            </section>
+        <% } %>
+
+        <footer class="page-footer">
+            Reporte generado: <%= new Date().toLocaleString('es-ES') %>
+        </footer>
+    </main>
+
+    <%
+        const pdfRegionalSummary = district.regional_summary || {};
+        const pdfDistrictTimeReport = time_checks && time_checks.district_report;
+        const pdfZoneTimeReport = time_checks && time_checks.zone_report;
+        const pdfIsZoneReport = district.report_type === 'zone';
+        const pdfTimeOverview = pdfDistrictTimeReport && pdfDistrictTimeReport.overview;
+        const pdfDistributionCharts = pdfDistrictTimeReport && Array.isArray(pdfDistrictTimeReport.distribution_charts)
+            ? pdfDistrictTimeReport.distribution_charts
+            : [];
+        const pdfComparisonRows = pdfDistrictTimeReport && Array.isArray(pdfDistrictTimeReport.store_rows)
+            ? pdfDistrictTimeReport.store_rows
+            : [];
+        const pdfSortComparisonRows = (checkKey) => [...pdfComparisonRows]
+            .filter((row) => row[checkKey] && row[checkKey].is_applicable !== false)
+            .sort((a, b) => {
+                const aValue = a[checkKey] && a[checkKey].avg_seconds;
+                const bValue = b[checkKey] && b[checkKey].avg_seconds;
+                const aHasValue = Number.isFinite(aValue);
+                const bHasValue = Number.isFinite(bValue);
+
+                if (aHasValue && bHasValue && aValue !== bValue) {
+                    return aValue - bValue;
+                }
+
+                if (aHasValue !== bHasValue) {
+                    return aHasValue ? -1 : 1;
+                }
+
+                return String(a.store || '').localeCompare(String(b.store || ''), 'es');
+            });
+        const pdfLobbyComparisonRows = pdfSortComparisonRows('lobby');
+        const pdfDriveComparisonRows = pdfSortComparisonRows('drive');
+        const pdfDashIfEmpty = (value) => (value === 'N/A' || value === null || value === undefined || value === '' ? '-' : value);
+        const pdfScopeIsMexico = (value) => String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase() === 'mexico';
+    %>
+
+    <div class="pdf-report" aria-hidden="true">
+        <section class="pdf-page">
+            <header class="pdf-header">
+                <div class="pdf-header-logo">
+                    <% if (logoExists && logoBase64) { %>
+                        <img src="data:<%= logoMimeType %>;base64,<%= logoBase64 %>" alt="Logo de la compania" class="pdf-brand-logo">
+                    <% } else { %>
+                        <div class="pdf-logo-placeholder">Logo</div>
+                    <% } %>
+                </div>
+                <div class="pdf-subheader">
+                    <div>
+                        <div class="pdf-eyebrow"><%= reportEyebrow %></div>
+                        <div class="pdf-title"><%= reportEntityLabel %>: <%= district.name %></div>
+                    </div>
+                    <div class="pdf-period">
+                        Periodo: <%= district.date_range.label %>
+                    </div>
+                </div>
+            </header>
+
+            <section class="pdf-overview">
+                <aside class="pdf-metrics" aria-label="Resumen de <%= reportEntityLabel.toLowerCase() %> PDF">
+                    <div class="pdf-metric total">
+                        <div class="pdf-metric-value"><%= district.total_stores %></div>
+                        <div class="pdf-metric-label">Total de Tiendas</div>
+                    </div>
+                    <div class="pdf-metric level-1">
+                        <div class="pdf-metric-value"><%= district.level_breakdown.nivel_1 %></div>
+                        <div class="pdf-metric-label">Nivel 1</div>
+                    </div>
+                    <div class="pdf-metric level-2">
+                        <div class="pdf-metric-value"><%= district.level_breakdown.nivel_2 %></div>
+                        <div class="pdf-metric-label">Nivel 2</div>
+                    </div>
+                    <div class="pdf-metric level-3">
+                        <div class="pdf-metric-value"><%= district.level_breakdown.nivel_3 %></div>
+                        <div class="pdf-metric-label">Nivel 3</div>
+                    </div>
+                    <div class="pdf-metric level-4">
+                        <div class="pdf-metric-value"><%= district.level_breakdown.nivel_4 %></div>
+                        <div class="pdf-metric-label">Nivel 4</div>
+                    </div>
+                    <div class="pdf-metric offline">
+                        <div class="pdf-metric-value"><%= district.level_breakdown.out_of_line %></div>
+                        <div class="pdf-metric-label">Fuera de L&iacute;nea</div>
+                    </div>
+                </aside>
+
+                <div class="pdf-scatter-card">
+                    <div class="pdf-chart-title">Servicio al cliente vs Operaciones</div>
+                    <div class="pdf-plot-area" aria-label="Scatter Servicio vs Operaciones PDF" <%= scatter.points.length ? '' : 'data-empty=\"true\"' %>>
+                        <% if (scatter.points.length > 0) { %>
+                            <svg viewBox="0 0 <%= scatterViewBox.width %> <%= scatterViewBox.height %>" role="img" aria-label="Scatter Servicio al cliente vs Operaciones (PDF)">
+                                <rect x="<%= scatterPlot.x %>" y="<%= scatterPlot.y %>" width="<%= scatterPlot.width %>" height="<%= scatterPlot.height %>" fill="#ffffff"></rect>
+
+                                <% tickValues.forEach((tick) => { %>
+                                    <%
+                                        const tx = Math.round(scaleLinear(tick, scatter.domain.min, scatter.domain.max, scatterPlot.x, scatterPlot.x + scatterPlot.width) * 100) / 100;
+                                        const ty = Math.round(scaleLinear(tick, scatter.domain.min, scatter.domain.max, scatterPlot.y + scatterPlot.height, scatterPlot.y) * 100) / 100;
+                                    %>
+                                    <line x1="<%= tx %>" y1="<%= scatterPlot.y %>" x2="<%= tx %>" y2="<%= scatterPlot.y + scatterPlot.height %>" stroke="rgba(174, 182, 191, 0.45)" stroke-width="1" />
+                                    <line x1="<%= scatterPlot.x %>" y1="<%= ty %>" x2="<%= scatterPlot.x + scatterPlot.width %>" y2="<%= ty %>" stroke="rgba(174, 182, 191, 0.45)" stroke-width="1" />
+                                    <text x="<%= tx %>" y="<%= scatterPlot.y + scatterPlot.height + 14 %>" text-anchor="middle" font-size="9" font-weight="800" fill="#5f6b76"><%= tick %></text>
+                                    <text x="<%= scatterPlot.x - 8 %>" y="<%= ty + 3 %>" text-anchor="end" font-size="9" font-weight="800" fill="#5f6b76"><%= tick %></text>
+                                <% }); %>
+
+                                <line x1="<%= scatterPlot.x %>" y1="<%= scatterPlot.y + scatterPlot.height %>" x2="<%= scatterPlot.x + scatterPlot.width %>" y2="<%= scatterPlot.y + scatterPlot.height %>" stroke="#aeb6bf" stroke-width="1" />
+                                <line x1="<%= scatterPlot.x %>" y1="<%= scatterPlot.y %>" x2="<%= scatterPlot.x %>" y2="<%= scatterPlot.y + scatterPlot.height %>" stroke="#aeb6bf" stroke-width="1" />
+
+                                <text x="<%= scatterPlot.x + scatterPlot.width %>" y="<%= scatterPlot.y + scatterPlot.height + 24 %>" text-anchor="end" font-size="9" font-weight="800" fill="#5f6b76">Operaciones</text>
+                                <text x="<%= scatterPlot.x - 28 %>" y="<%= scatterPlot.y + 8 %>" text-anchor="start" font-size="9" font-weight="800" fill="#5f6b76" transform="rotate(-90 <%= scatterPlot.x - 28 %> <%= scatterPlot.y + 8 %>)">Servicio al cliente</text>
+
+                                <% scatterLayout.forEach((p) => { %>
+                                    <%
+                                        const x1 = p.labelX + 2;
+                                        const y1 = p.labelY;
+                                        const x2 = p.cx - 5;
+                                        const y2 = p.cy;
+                                    %>
+                                    <line x1="<%= x1 %>" y1="<%= y1 %>" x2="<%= x2 %>" y2="<%= y2 %>" stroke="rgba(36, 49, 66, 0.22)" stroke-width="1" />
+                                    <circle data-location-id="<%= p.location_id %>" cx="<%= p.cx %>" cy="<%= p.cy %>" r="5.6" fill="<%= p.fill %>" opacity="0.92"></circle>
+                                    <text x="<%= p.labelX %>" y="<%= p.labelY + 3 %>" font-size="9" font-weight="800" fill="#243142"><%= p.label %></text>
+                                <% }); %>
+                            </svg>
+                        <% } %>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pdf-ranking-strip" aria-label="Promedios y rankings PDF">
+                <% if (pdfIsZoneReport) { %>
+                    <div class="pdf-ranking-card primary">
+                        <div class="pdf-ranking-value"><%= pdfRegionalSummary.nivel_promedio ?? 'N/A' %></div>
+                        <div class="pdf-ranking-label">Nivel Promedio</div>
+                    </div>
+                    <div class="pdf-ranking-card">
+                        <div class="pdf-ranking-value"><%= pdfRegionalSummary.zonal_rank_label || 'N/A' %></div>
+                        <div class="pdf-ranking-label">Ranking Zonal</div>
+                    </div>
+                <% } else { %>
+                    <div class="pdf-ranking-card primary">
+                        <div class="pdf-ranking-value"><%= pdfRegionalSummary.nivel_promedio ?? 'N/A' %></div>
+                        <div class="pdf-ranking-label">Nivel Promedio</div>
+                    </div>
+                    <div class="pdf-ranking-card">
+                        <div class="pdf-ranking-value"><%= pdfRegionalSummary.country_average ?? 'N/A' %></div>
+                        <div class="pdf-ranking-label">Promedio M&eacute;xico</div>
+                    </div>
+                    <div class="pdf-ranking-card">
+                        <div class="pdf-ranking-value"><%= pdfRegionalSummary.country_rank_label || 'N/A' %></div>
+                        <div class="pdf-ranking-label">Ranking M&eacute;xico</div>
+                    </div>
+                    <div class="pdf-ranking-card">
+                        <div class="pdf-ranking-value"><%= pdfRegionalSummary.regional_average ?? 'N/A' %></div>
+                        <div class="pdf-ranking-label">Promedio Regional</div>
+                    </div>
+                    <div class="pdf-ranking-card">
+                        <div class="pdf-ranking-value"><%= pdfRegionalSummary.regional_rank_label || 'N/A' %></div>
+                        <div class="pdf-ranking-label">Ranking Regional</div>
+                    </div>
+                <% } %>
+            </section>
+
+            <section class="pdf-section">
+                <div class="pdf-section-title">Tiendas de <%= reportEntityLabel.toLowerCase() %></div>
+                <% if (tableStores.length > 0) { %>
+                    <div class="pdf-table-wrap pdf-stores-wrap">
+                        <table class="pdf-table pdf-stores-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-store">Tienda</th>
+                                    <th class="center col-level">Nivel</th>
+                                    <th class="numeric col-service">Servicio</th>
+                                    <th class="numeric col-appearance">Apariencia</th>
+                                    <th class="numeric col-prep">Preparaciones</th>
+                                    <th class="numeric col-proc">Proc<br>Gen</th>
+                                    <th class="numeric col-score">Puntuaci&oacute;n</th>
+                                    <th class="center col-status">Estado</th>
+                                    <th class="center col-link">Informe</th>
+                                    <th class="center col-cashier">Detalle<br>Cajeros</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% tableStores.forEach((store) => { %>
+                                    <tr>
+                                        <td><strong><%= store.location %></strong></td>
+                                        <td class="center">
+                                            <% if (store.nivel !== 'N/A') { %>
+                                                <span class="pdf-chip"><%= store.nivel %></span>
+                                            <% } else { %>
+                                                <span style="color: var(--muted);">-</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="numeric"><%= store.servicio %></td>
+                                        <td class="numeric"><%= store.apariencia %></td>
+                                        <td class="numeric"><%= store.preparaciones %></td>
+                                        <td class="numeric"><%= store.proc_gen %></td>
+                                        <td class="numeric"><%= store.puntuacion !== 'N/A' ? store.puntuacion : 'N/A' %></td>
+                                        <td class="center">
+                                            <% if (store.has_report) { %>
+                                                <span class="pdf-chip status">En l&iacute;nea</span>
+                                            <% } else { %>
+                                                <span class="pdf-chip status offline">Fuera de l&iacute;nea</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="center">
+                                            <% if (store.has_report && store.informe_url) { %>
+                                                <a href="<%= store.informe_url %>" class="pdf-link">Ver</a>
+                                            <% } else { %>
+                                                <span style="color: var(--muted);">-</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="center">
+                                            <% if (store.has_report && store.cashier_report_url) { %>
+                                                <a href="<%= store.cashier_report_url %>" class="pdf-link">Ver</a>
+                                            <% } else { %>
+                                                <span style="color: var(--muted);">-</span>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="pdf-empty-state">No hay tiendas para <%= reportEntityLabel.toLowerCase() %> y periodo seleccionados.</div>
+                <% } %>
+            </section>
+        </section>
+
+        <section class="pdf-page pdf-time-page">
+            <header class="pdf-header">
+                <div class="pdf-header-logo">
+                    <% if (logoExists && logoBase64) { %>
+                        <img src="data:<%= logoMimeType %>;base64,<%= logoBase64 %>" alt="Logo de la compania" class="pdf-brand-logo">
+                    <% } else { %>
+                        <div class="pdf-logo-placeholder">Logo</div>
+                    <% } %>
+                </div>
+                <div class="pdf-subheader">
+                    <div>
+                        <div class="pdf-eyebrow"><%= reportEyebrow %></div>
+                        <div class="pdf-title"><%= reportEntityLabel %>: <%= district.name %></div>
+                    </div>
+                    <div class="pdf-period">
+                        Periodo: <%= district.date_range.label %>
+                    </div>
+                </div>
+            </header>
+
+            <section class="pdf-section">
+                <div class="pdf-section-title">Tiempos promedio y ranking</div>
+                <% if (pdfIsZoneReport && pdfZoneTimeReport && Array.isArray(pdfZoneTimeReport.checks) && pdfZoneTimeReport.checks.length > 0) { %>
+                    <% const pdfZoneDashIfEmpty = (value) => (value === 'N/A' || value === null || value === undefined || value === '' ? '-' : value); %>
+                    <div class="pdf-subsection-title">Tabla Comparativa de Locaciones de <%= pdfZoneTimeReport.zone_name || district.name %></div>
+                    <% pdfZoneTimeReport.checks.forEach((check) => { %>
+                        <div class="pdf-comparison-panel">
+                            <div class="pdf-check-title"><%= check.title %></div>
+                            <div class="pdf-table-wrap pdf-comparison-wrap <%= check.mode === 'time_only' ? 'time-only-wrap' : '' %>">
+                                <table class="pdf-table pdf-time-table pdf-time-summary-table <%= check.mode === 'time_only' ? 'time-only-table' : '' %>">
+                                    <thead>
+                                        <tr>
+                                            <th><%= reportEntityLabel %></th>
+                                            <th class="numeric">Tiempo Promedio</th>
+                                            <th class="numeric">Dif Sem. Ant.</th>
+                                            <% if (check.mode !== 'time_only') { %>
+                                                <th class="numeric">% &lt; 1:00min</th>
+                                                <th class="numeric">Desempe&ntilde;o</th>
+                                            <% } %>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% check.zones.forEach((row) => { %>
+                                            <tr>
+                                                <td><strong><%= row.label %></strong></td>
+                                                <td class="numeric"><%= pdfZoneDashIfEmpty(row.avg_label) %></td>
+                                                <td class="numeric"><%= pdfZoneDashIfEmpty(row.diff_seconds_previous_label) %></td>
+                                                <% if (check.mode !== 'time_only') { %>
+                                                    <td class="numeric"><%= pdfZoneDashIfEmpty(row.less_than_60_label) %></td>
+                                                    <td class="numeric"><%= pdfZoneDashIfEmpty(row.performance_previous_label) %></td>
+                                                <% } %>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                                <table class="pdf-table pdf-time-table <%= check.mode === 'time_only' ? 'time-only-table' : '' %>">
+                                    <thead>
+                                        <tr>
+                                            <th>Locaci&oacute;n</th>
+                                            <th class="numeric">AVG</th>
+                                            <th class="numeric">Dif AVG</th>
+                                            <th class="numeric">Dif Sem.</th>
+                                            <% if (check.mode !== 'time_only') { %>
+                                                <th class="numeric">% Obj.</th>
+                                                <th class="numeric">Dif %</th>
+                                                <th class="numeric">Desemp.</th>
+                                            <% } %>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% check.locations.forEach((row) => { %>
+                                            <tr>
+                                                <td><strong><%= row.location %></strong></td>
+                                                <td class="numeric"><%= pdfZoneDashIfEmpty(row.avg_label) %></td>
+                                                <td class="numeric"><%= pdfZoneDashIfEmpty(row.diff_seconds_average_label) %></td>
+                                                <td class="numeric"><%= pdfZoneDashIfEmpty(row.diff_seconds_previous_label) %></td>
+                                                <% if (check.mode !== 'time_only') { %>
+                                                    <td class="numeric"><%= pdfZoneDashIfEmpty(row.less_than_60_label) %></td>
+                                                    <td class="numeric"><%= pdfZoneDashIfEmpty(row.diff_percent_zone_label) %></td>
+                                                    <td class="numeric"><%= pdfZoneDashIfEmpty(row.performance_previous_label) %></td>
+                                                <% } %>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else if (pdfTimeOverview && pdfTimeOverview.sections && pdfTimeOverview.sections.length > 0) { %>
+                    <div class="pdf-time-scorecards">
+                        <% pdfTimeOverview.sections.forEach((section) => { %>
+                            <%
+                                const pdfIsMexicoScope = pdfScopeIsMexico(section.scope);
+                                const pdfTimeScopeLabel = pdfIsMexicoScope ? 'M&eacute;xico' : 'Regional';
+                                const pdfTimeRankLabel = pdfIsMexicoScope ? 'Ranking M&eacute;xico' : 'Ranking Regional';
+                            %>
+                            <% section.rows.forEach((row) => { %>
+                                <div class="pdf-ranking-card">
+                                    <div class="pdf-ranking-value"><%= row.avg_label %></div>
+                                    <div class="pdf-ranking-label"><%- pdfTimeScopeLabel %> <%= String(row.label || '').replace(':', '') %></div>
+                                    <div class="pdf-time-card-meta"><%- pdfTimeRankLabel %> <%= row.rank_label %></div>
+                                </div>
+                            <% }); %>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <div class="pdf-empty-state">No hay datos de tiempos para este distrito.</div>
+                <% } %>
+            </section>
+
+            <% if (pdfDistributionCharts.length > 0) { %>
+                <section class="pdf-section" aria-label="Distribucion historica por rangos PDF">
+                    <div class="pdf-section-title">Distribuci&oacute;n hist&oacute;rica por rangos</div>
+                    <div class="pdf-stacked-area-grid">
+                        <% pdfDistributionCharts.forEach((chart) => { %>
+                            <div class="pdf-stacked-chart">
+                                <div class="pdf-stacked-chart-header">
+                                    <div class="pdf-stacked-chart-title"><%= chart.title %></div>
+                                    <div class="pdf-stacked-chart-meta">Porcentaje de tiendas por rango</div>
+                                </div>
+                                <div class="chart-work-message pdf-chart-work-message" role="status" aria-label="Grafico de tiempos en desarrollo PDF">
+                                    <div>
+                                        <strong>En Construcci&oacute;n</strong>
+                                        <span>Visualizaci&oacute;n hist&oacute;rica de tiempos en desarrollo.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                </section>
+            <% } %>
+
+            <% if (pdfDistrictTimeReport && pdfComparisonRows.length > 0) { %>
+                <section class="pdf-section pdf-time-comparison-section">
+                    <div class="pdf-subsection-title">Tabla Comparativa de Tiendas del Distrito <%= pdfDistrictTimeReport.district_number || '' %></div>
+                    <div class="pdf-time-comparison-grid">
+                        <div class="pdf-comparison-panel">
+                            <div class="pdf-check-title">Lobby</div>
+                            <div class="pdf-table-wrap pdf-comparison-wrap">
+                                <table class="pdf-table pdf-time-table pdf-time-summary-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Distrito</th>
+                                            <th class="numeric">Tiempo Promedio</th>
+                                            <th class="numeric">Dif seg Semana Ant.</th>
+                                            <th class="numeric">% &lt; 1:00min</th>
+                                            <th class="numeric">Desempe&ntilde;o</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong><%= pdfDistrictTimeReport.general.lobby.label %></strong></td>
+                                            <td class="numeric"><%= pdfDashIfEmpty(pdfDistrictTimeReport.general.lobby.avg_label) %></td>
+                                            <td class="numeric"><%= pdfDashIfEmpty(pdfDistrictTimeReport.general.lobby.diff_seconds_previous_label) %></td>
+                                            <td class="numeric"><%= pdfDashIfEmpty(pdfDistrictTimeReport.general.lobby.less_than_60_label) %></td>
+                                            <td class="numeric"><%= pdfDashIfEmpty(pdfDistrictTimeReport.general.lobby.performance_previous_label) %></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table class="pdf-table pdf-time-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Locaci&oacute;n</th>
+                                            <th class="numeric">AVG</th>
+                                            <th class="numeric">Dif AVG</th>
+                                            <th class="numeric">Dif Sem.</th>
+                                            <th class="numeric">% Obj.</th>
+                                            <th class="numeric">Dif %</th>
+                                            <th class="numeric">Desemp.</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% pdfLobbyComparisonRows.forEach((row) => { %>
+                                            <tr>
+                                                <td><strong><%= row.store %></strong></td>
+                                                <td class="numeric"><%= pdfDashIfEmpty(row.lobby.avg_label) %></td>
+                                                <td class="numeric"><%= pdfDashIfEmpty(row.lobby.diff_seconds_average_label) %></td>
+                                                <td class="numeric"><%= pdfDashIfEmpty(row.lobby.diff_seconds_previous_label) %></td>
+                                                <td class="numeric"><%= pdfDashIfEmpty(row.lobby.less_than_60_label) %></td>
+                                                <td class="numeric"><%= pdfDashIfEmpty(row.lobby.diff_percent_district_label) %></td>
+                                                <td class="numeric"><%= pdfDashIfEmpty(row.lobby.performance_previous_label) %></td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="pdf-comparison-panel">
+                            <div class="pdf-check-title">Drive</div>
+                            <div class="pdf-table-wrap pdf-comparison-wrap">
+                                <table class="pdf-table pdf-time-table pdf-time-summary-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Distrito</th>
+                                            <th class="numeric">Tiempo Promedio</th>
+                                            <th class="numeric">Dif seg Semana Ant.</th>
+                                            <th class="numeric">% &lt; 1:00min</th>
+                                            <th class="numeric">Desempe&ntilde;o</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong><%= pdfDistrictTimeReport.general.drive.label %></strong></td>
+                                            <td class="numeric"><%= pdfDashIfEmpty(pdfDistrictTimeReport.general.drive.avg_label) %></td>
+                                            <td class="numeric"><%= pdfDashIfEmpty(pdfDistrictTimeReport.general.drive.diff_seconds_previous_label) %></td>
+                                            <td class="numeric"><%= pdfDashIfEmpty(pdfDistrictTimeReport.general.drive.less_than_60_label) %></td>
+                                            <td class="numeric"><%= pdfDashIfEmpty(pdfDistrictTimeReport.general.drive.performance_previous_label) %></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table class="pdf-table pdf-time-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Locaci&oacute;n</th>
+                                            <th class="numeric">AVG</th>
+                                            <th class="numeric">Dif AVG</th>
+                                            <th class="numeric">Dif Sem.</th>
+                                            <th class="numeric">% Obj.</th>
+                                            <th class="numeric">Dif %</th>
+                                            <th class="numeric">Desemp.</th>
+                                        </tr>
+                                    </thead>
+                                    <% if (pdfDriveComparisonRows.length > 0) { %>
+                                        <tbody>
+                                            <% pdfDriveComparisonRows.forEach((row) => { %>
+                                                <tr>
+                                                    <td><strong><%= row.store %></strong></td>
+                                                    <td class="numeric"><%= pdfDashIfEmpty(row.drive.avg_label) %></td>
+                                                    <td class="numeric"><%= pdfDashIfEmpty(row.drive.diff_seconds_average_label) %></td>
+                                                    <td class="numeric"><%= pdfDashIfEmpty(row.drive.diff_seconds_previous_label) %></td>
+                                                    <td class="numeric"><%= pdfDashIfEmpty(row.drive.less_than_60_label) %></td>
+                                                    <td class="numeric"><%= pdfDashIfEmpty(row.drive.diff_percent_district_label) %></td>
+                                                    <td class="numeric"><%= pdfDashIfEmpty(row.drive.performance_previous_label) %></td>
+                                                </tr>
+                                            <% }); %>
+                                        </tbody>
+                                    <% } else { %>
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="7" class="center" style="color: var(--muted);">Este distrito no tiene tiendas que generen Drive.</td>
+                                            </tr>
+                                        </tbody>
+                                    <% } %>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            <% } %>
+
+        </section>
+    </div>
+</body>
+</html>
