@@ -7,6 +7,7 @@ const { pathToFileURL } = require('url');
 const { promisify } = require('util');
 
 const execFileAsync = promisify(execFile);
+let puppeteer;
 
 const DEFAULT_CHROME_PATHS = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -16,6 +17,10 @@ const DEFAULT_CHROME_PATHS = [
 ];
 
 async function renderPdfFromHtml(html) {
+  if (canUsePuppeteer()) {
+    return renderPdfWithPuppeteer(html);
+  }
+
   const executablePath = findBrowserExecutable();
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'district-report-pdf-'));
   const htmlPath = path.join(tempDir, 'report.html');
@@ -51,6 +56,48 @@ async function renderPdfFromHtml(html) {
     return pdfBuffer;
   } finally {
     await fs.rm(tempDir, { recursive: true, force: true });
+  }
+}
+
+async function renderPdfWithPuppeteer(html) {
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+    ],
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setContent(preparePrintableHtml(html), {
+      waitUntil: ['load', 'networkidle0'],
+      timeout: 120000,
+    });
+
+    return await page.pdf({
+      format: 'Letter',
+      printBackground: true,
+      margin: {
+        top: '0in',
+        right: '0in',
+        bottom: '0in',
+        left: '0in',
+      },
+    });
+  } finally {
+    await browser.close();
+  }
+}
+
+function canUsePuppeteer() {
+  try {
+    puppeteer = puppeteer || require('puppeteer');
+    return true;
+  } catch (error) {
+    return false;
   }
 }
 
