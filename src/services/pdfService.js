@@ -18,7 +18,14 @@ const DEFAULT_CHROME_PATHS = [
 
 async function renderPdfFromHtml(html) {
   if (canUsePuppeteer()) {
-    return renderPdfWithPuppeteer(html);
+    try {
+      return await renderPdfWithPuppeteer(html);
+    } catch (error) {
+      if (!hasBrowserExecutable()) {
+        throw error;
+      }
+      console.warn(`Puppeteer no pudo generar el PDF, usando Chrome/Edge local: ${error.message}`);
+    }
   }
 
   const executablePath = findBrowserExecutable();
@@ -72,14 +79,18 @@ async function renderPdfWithPuppeteer(html) {
 
   try {
     const page = await browser.newPage();
+    await page.emulateMediaType('print');
     await page.setContent(preparePrintableHtml(html), {
       waitUntil: ['load', 'networkidle0'],
       timeout: 120000,
     });
+    await page.evaluateHandle('document.fonts && document.fonts.ready');
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
     return await page.pdf({
       format: 'Letter',
       printBackground: true,
+      preferCSSPageSize: true,
       margin: {
         top: '0in',
         right: '0in',
@@ -138,6 +149,14 @@ function findBrowserExecutable() {
   }
 
   return executablePath;
+}
+
+function hasBrowserExecutable() {
+  return [
+    process.env.CHROME_PATH,
+    process.env.PUPPETEER_EXECUTABLE_PATH,
+    ...DEFAULT_CHROME_PATHS,
+  ].filter(Boolean).some((candidate) => fsSync.existsSync(candidate));
 }
 
 module.exports = {
