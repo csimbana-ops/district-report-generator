@@ -55,12 +55,7 @@ async function renderPdfFromHtml(html) {
       maxBuffer: 1024 * 1024,
     });
 
-    const pdfBuffer = await fs.readFile(pdfPath);
-    if (pdfBuffer.length === 0) {
-      throw new Error('Chrome genero un PDF vacio');
-    }
-
-    return pdfBuffer;
+    return ensurePdfBuffer(await fs.readFile(pdfPath));
   } finally {
     await fs.rm(tempDir, { recursive: true, force: true });
   }
@@ -87,7 +82,7 @@ async function renderPdfWithPuppeteer(html) {
     await page.evaluateHandle('document.fonts && document.fonts.ready');
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
-    return await page.pdf({
+    const pdfBytes = await page.pdf({
       format: 'Letter',
       printBackground: true,
       preferCSSPageSize: true,
@@ -98,6 +93,8 @@ async function renderPdfWithPuppeteer(html) {
         left: '0in',
       },
     });
+
+    return ensurePdfBuffer(pdfBytes);
   } finally {
     await browser.close();
   }
@@ -157,6 +154,20 @@ function hasBrowserExecutable() {
     process.env.PUPPETEER_EXECUTABLE_PATH,
     ...DEFAULT_CHROME_PATHS,
   ].filter(Boolean).some((candidate) => fsSync.existsSync(candidate));
+}
+
+function ensurePdfBuffer(pdfBytes) {
+  const pdfBuffer = Buffer.isBuffer(pdfBytes) ? pdfBytes : Buffer.from(pdfBytes);
+
+  if (pdfBuffer.length === 0) {
+    throw new Error('Chrome genero un PDF vacio');
+  }
+
+  if (pdfBuffer.subarray(0, 4).toString('utf8') !== '%PDF') {
+    throw new Error('Chrome genero una respuesta invalida en lugar de un PDF');
+  }
+
+  return pdfBuffer;
 }
 
 module.exports = {
