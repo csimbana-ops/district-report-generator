@@ -983,10 +983,11 @@
             const link = document.createElement('a');
             link.href = reportUrl;
             link.download = getFileNameFromResponse(response) || defaultFileName;
+            link.target = '_blank';
             document.body.appendChild(link);
             link.click();
             link.remove();
-            window.URL.revokeObjectURL(reportUrl);
+            setTimeout(() => window.URL.revokeObjectURL(reportUrl), 60000);
         }
 
         function getFileNameFromResponse(response) {
