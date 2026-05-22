@@ -6,6 +6,7 @@ const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Middleware
 app.use(express.json());
@@ -55,11 +56,12 @@ app.use((err, req, res, next) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   console.log(`
 ╔════════════════════════════════════════╗
 ║   Generador de Reportes - Activo      ║
 ║   Puerto: ${PORT}                          ║
+║   Host: ${HOST}                         ║
 ║   Entorno: ${process.env.NODE_ENV || 'development'}             ║
 ╚════════════════════════════════════════╝
 
